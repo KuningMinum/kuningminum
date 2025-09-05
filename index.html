@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Toko Aplikasi Web</title>
+<title>Kuning minum Web</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
 <style>
   body {
@@ -72,6 +72,24 @@
     text-decoration: underline;
   }
 
+  /* Pencarian */
+  .search-container {
+    margin-top: 20px;
+    width: 100%;
+    max-width: 500px;
+    display: flex;
+    justify-content: center;
+  }
+
+  .search-container input {
+    width: 100%;
+    padding: 10px 15px;
+    border-radius: 25px;
+    border: 1px solid #ccc;
+    outline: none;
+    font-size: 1rem;
+  }
+
   .grid-aplikasi {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -98,10 +116,11 @@
     transform: translateY(-5px);
   }
 
-  .aplikasi img {
+  .aplikasi img, .aplikasi i {
     width: 80px;
     height: 80px;
     margin-bottom: 10px;
+    font-size: 3rem;
   }
 
   .coming-soon img {
@@ -134,25 +153,38 @@
   </a>
 </div>
 
+<!-- Pencarian Aplikasi -->
+<div class="search-container">
+  <input type="text" id="searchApp" placeholder="Cari aplikasi... 🔍">
+</div>
+
 <!-- Grid Aplikasi -->
-<div class="grid-aplikasi">
+<div class="grid-aplikasi" id="gridAplikasi">
   <!-- Aplikasi Sudah Ada -->
-  <div class="aplikasi">
-    <a href="WAKTU.html">
+  <div class="aplikasi" data-nama="Waktu">
+    <a href="Website/WAKTU.html">
       <img src="https://icon-icons.com/icons2/517/PNG/512/clock_time_icon-icons.com_51107.png" alt="Waktu">
       <p id="namaAplikasi">Waktu</p>
     </a>
   </div>
 
+  <!-- Aplikasi Baru: HTML Editor -->
+  <div class="aplikasi" data-nama="HTML Editor">
+    <a href="Website/HTML EDITOR.html">
+      <i class="fas fa-code"></i>
+      <p>HTML Editor</p>
+    </a>
+  </div>
+
   <!-- Aplikasi Coming Soon -->
-  <div class="aplikasi coming-soon">
+  <div class="aplikasi coming-soon" data-nama="Coming Soon">
     <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" target="_blank">
       <img src="https://storytrails.in/wp-content/uploads/2022/04/comingsoon.png" alt="Coming Soon">
       <p>Coming Soon</p>
     </a>
   </div>
 
-  <div class="aplikasi coming-soon">
+  <div class="aplikasi coming-soon" data-nama="Coming Soon">
     <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" target="_blank">
       <img src="https://storytrails.in/wp-content/uploads/2022/04/comingsoon.png" alt="Coming Soon">
       <p>Coming Soon</p>
@@ -171,12 +203,28 @@
 
   // Nama Aplikasi sesuai bahasa pengguna
   const namaApp = document.getElementById('namaAplikasi');
-  const bahasa = navigator.language || navigator.userLanguage; // contoh: "id-ID" atau "en-US"
+  const bahasa = navigator.language || navigator.userLanguage; 
   if (bahasa.startsWith('id')) {
     namaApp.textContent = 'Selisih Waktu';
   } else {
     namaApp.textContent = 'Time Difference';
   }
+
+  // Fungsi Pencarian Aplikasi
+  const searchInput = document.getElementById('searchApp');
+  const apps = document.querySelectorAll('.grid-aplikasi .aplikasi');
+
+  searchInput.addEventListener('input', () => {
+    const query = searchInput.value.toLowerCase();
+    apps.forEach(app => {
+      const nama = app.getAttribute('data-nama').toLowerCase();
+      if(nama.includes(query)){
+        app.style.display = 'block';
+      } else {
+        app.style.display = 'none';
+      }
+    });
+  });
 </script>
 
 </body>
