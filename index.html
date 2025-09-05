@@ -3,149 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kuning minum Web</title>
+<title>Toko Aplikasi Web</title>
+<link rel="stylesheet" href="Website/index file/style.css"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
-<style>
-  body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #f9f9f9, #e0e0e0);
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    transition: background 0.3s, color 0.3s;
-    color: #333;
-  }
-
-  /* Tema Gelap */
-  body.gelap {
-    background: #1e1e1e;
-    color: #f1f1f1;
-  }
-
-  /* Toggle Tema */
-  .toggle-tema {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    font-size: 1.5rem;
-    cursor: pointer;
-    color: #333;
-    transition: color 0.3s;
-  }
-
-  body.gelap .toggle-tema {
-    color: #f1f1f1;
-  }
-
-  .profil {
-    margin-top: 80px;
-    text-align: center;
-  }
-
-  .profil a {
-    text-decoration: none;
-    color: inherit;
-  }
-
-  .profil img {
-    width: 120px;
-    height: 120px;
-    border-radius: 50%;
-    border: 3px solid #ddd;
-    transition: transform 0.2s;
-  }
-
-  .profil img:hover {
-    transform: scale(1.05);
-  }
-
-  .profil h2 {
-    margin-top: 10px;
-    font-size: 1.5rem;
-    transition: color 0.2s, text-decoration 0.2s;
-  }
-
-  .profil h2:hover {
-    color: #007bff;
-    text-decoration: underline;
-  }
-
-  /* Pencarian */
-  .search-container {
-    margin-top: 20px;
-    width: 100%;
-    max-width: 500px;
-    display: flex;
-    justify-content: center;
-  }
-
-  .search-container input {
-    width: 100%;
-    padding: 10px 15px;
-    border-radius: 25px;
-    border: 1px solid #ccc;
-    outline: none;
-    font-size: 1rem;
-  }
-
-  .grid-aplikasi {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 20px;
-    margin: 50px 20px;
-    width: 100%;
-    max-width: 800px;
-  }
-
-  .aplikasi {
-    background: #fff;
-    border-radius: 15px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    padding: 20px;
-    text-align: center;
-    transition: transform 0.2s, background 0.3s;
-  }
-
-  body.gelap .aplikasi {
-    background: #2c2c2c;
-  }
-
-  .aplikasi:hover {
-    transform: translateY(-5px);
-  }
-
-  .aplikasi img, .aplikasi i {
-    width: 80px;
-    height: 80px;
-    margin-bottom: 10px;
-    font-size: 3rem;
-  }
-
-  .coming-soon img {
-    opacity: 0.8;
-    filter: grayscale(50%);
-  }
-
-  .aplikasi p {
-    font-weight: bold;
-    color: inherit;
-    margin: 0;
-  }
-
-  .aplikasi a {
-    text-decoration: none;
-    color: inherit;
-  }
-</style>
 </head>
 <body>
 
-<!-- Toggle Tema -->
 <i class="fas fa-moon toggle-tema" id="toggleTema" title="Ganti Tema"></i>
+<select id="dropdownBahasa">
+  <option value="auto">Auto</option>
+  <option value="en">English</option>
+  <option value="id">Indonesia</option>
+</select>
 
-<!-- Profil Pemilik -->
 <div class="profil">
   <a href="https://github.com/KuningMinum" target="_blank">
     <img src="https://avatars.fastly.steamstatic.com/0cd1a09ea56f2f46003cf297f1b3406198d8bd07_full.jpg" alt="Profil Kuningminum">
@@ -153,78 +23,91 @@
   </a>
 </div>
 
-<!-- Pencarian Aplikasi -->
 <div class="search-container">
   <input type="text" id="searchApp" placeholder="Cari aplikasi... 🔍">
 </div>
 
-<!-- Grid Aplikasi -->
-<div class="grid-aplikasi" id="gridAplikasi">
-  <!-- Aplikasi Sudah Ada -->
-  <div class="aplikasi" data-nama="Waktu">
-    <a href="Website/WAKTU.html">
-      <img src="https://icon-icons.com/icons2/517/PNG/512/clock_time_icon-icons.com_51107.png" alt="Waktu">
-      <p id="namaAplikasi">Waktu</p>
-    </a>
-  </div>
-
-  <!-- Aplikasi Baru: HTML Editor -->
-  <div class="aplikasi" data-nama="HTML Editor">
-    <a href="Website/HTML EDITOR.html">
-      <i class="fas fa-code"></i>
-      <p>HTML Editor</p>
-    </a>
-  </div>
-
-  <!-- Aplikasi Coming Soon -->
-  <div class="aplikasi coming-soon" data-nama="Coming Soon">
-    <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" target="_blank">
-      <img src="https://storytrails.in/wp-content/uploads/2022/04/comingsoon.png" alt="Coming Soon">
-      <p>Coming Soon</p>
-    </a>
-  </div>
-
-  <div class="aplikasi coming-soon" data-nama="Coming Soon">
-    <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" target="_blank">
-      <img src="https://storytrails.in/wp-content/uploads/2022/04/comingsoon.png" alt="Coming Soon">
-      <p>Coming Soon</p>
-    </a>
-  </div>
-</div>
+<div class="grid-aplikasi" id="gridAplikasi"></div>
 
 <script>
-  // Toggle Tema
-  const toggle = document.getElementById('toggleTema');
-  toggle.addEventListener('click', () => {
-    document.body.classList.toggle('gelap');
-    toggle.classList.toggle('fa-sun');
-    toggle.classList.toggle('fa-moon');
+const toggle = document.getElementById('toggleTema');
+toggle.addEventListener('click', ()=>{
+  document.body.classList.toggle('gelap'); 
+  toggle.classList.toggle('fa-sun'); 
+  toggle.classList.toggle('fa-moon');
+});
+
+const dropdown = document.getElementById('dropdownBahasa');
+const searchInput = document.getElementById('searchApp');
+const grid = document.getElementById('gridAplikasi');
+
+let currentLang = localStorage.getItem('lang') || 'auto';
+dropdown.value = currentLang;
+
+fetch('Website/index file/items.json')
+.then(res=>res.json())
+.then(data=>{
+  data.forEach(item=>{
+    const div=document.createElement('div');
+    div.classList.add('aplikasi');
+    if(item.icon==='coming-soon') div.classList.add('coming-soon');
+    div.setAttribute('data-nama-id',item.nama_id);
+    div.setAttribute('data-nama-en',item.nama_en);
+
+    const a=document.createElement('a');
+    a.href=item.link;
+    if(item.icon==='coming-soon') a.target='_blank';
+
+    if(item.icon==='coming-soon'){
+      const img=document.createElement('img');
+      img.src="https://storytrails.in/wp-content/uploads/2022/04/comingsoon.png";
+      img.alt="Coming Soon";
+      a.appendChild(img);
+    }else{
+      const i=document.createElement('i');
+      i.className=item.icon;
+      a.appendChild(i);
+    }
+
+    const p=document.createElement('p');
+    p.textContent=item.nama_id;
+    a.appendChild(p);
+    div.appendChild(a);
+    grid.appendChild(div);
   });
 
-  // Nama Aplikasi sesuai bahasa pengguna
-  const namaApp = document.getElementById('namaAplikasi');
-  const bahasa = navigator.language || navigator.userLanguage; 
-  if (bahasa.startsWith('id')) {
-    namaApp.textContent = 'Selisih Waktu';
-  } else {
-    namaApp.textContent = 'Time Difference';
-  }
+  setLanguage(currentLang);
+});
 
-  // Fungsi Pencarian Aplikasi
-  const searchInput = document.getElementById('searchApp');
-  const apps = document.querySelectorAll('.grid-aplikasi .aplikasi');
-
-  searchInput.addEventListener('input', () => {
-    const query = searchInput.value.toLowerCase();
-    apps.forEach(app => {
-      const nama = app.getAttribute('data-nama').toLowerCase();
-      if(nama.includes(query)){
-        app.style.display = 'block';
-      } else {
-        app.style.display = 'none';
-      }
-    });
+function setLanguage(lang){
+  const apps=document.querySelectorAll('.grid-aplikasi .aplikasi');
+  apps.forEach(app=>{
+    const p=app.querySelector('p');
+    let useLang=lang;
+    if(lang==='auto') useLang=(navigator.language.startsWith('id')?'id':'en');
+    p.textContent=useLang==='id'? app.getAttribute('data-nama-id'): app.getAttribute('data-nama-en');
   });
+
+  searchInput.placeholder = (lang==='id'||(lang==='auto'&&navigator.language.startsWith('id')))? "Cari aplikasi... 🔍":"Search apps... 🔍";
+}
+
+dropdown.addEventListener('change',()=>{
+  currentLang=dropdown.value;
+  localStorage.setItem('lang',currentLang);
+  setLanguage(currentLang);
+  searchInput.value='';
+  document.querySelectorAll('.grid-aplikasi .aplikasi').forEach(app=>app.style.display='block');
+});
+
+searchInput.addEventListener('input',()=>{
+  const query=searchInput.value.toLowerCase();
+  const apps=document.querySelectorAll('.grid-aplikasi .aplikasi');
+  let useLang=currentLang==='auto'? (navigator.language.startsWith('id')?'id':'en'):currentLang;
+  apps.forEach(app=>{
+    const nama=useLang==='id'? app.getAttribute('data-nama-id').toLowerCase(): app.getAttribute('data-nama-en').toLowerCase();
+    app.style.display=nama.includes(query)? 'block':'none';
+  });
+});
 </script>
 
 </body>
