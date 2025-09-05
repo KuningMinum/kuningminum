@@ -1,37 +1,115 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Toko Aplikasi Web</title>
-<link rel="stylesheet" href="Website/index file/style.css"/>
+<title>Web App Store</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+<style>
+/* ===== Body & Tema ===== */
+body { 
+  font-family:'Segoe UI', Tahoma, Geneva, Verdana,sans-serif; 
+  background: linear-gradient(135deg,#f9f9f9,#e0e0e0); 
+  margin:0; padding:0; 
+  display:flex; flex-direction:column; align-items:center; 
+  transition: background 0.3s,color 0.3s; color:#333;
+}
+body.gelap {
+  background:#1e1e1e; 
+  color:#f1f1f1;
+}
+
+/* ===== Floating Controls (Tema + Bahasa) ===== */
+.floating-controls {
+  position:fixed; bottom:20px; right:20px;
+  display:flex; gap:10px; align-items:center; z-index:999;
+}
+.toggle-tema {
+  font-size:1.5rem; cursor:pointer; color:#333; transition: color 0.3s;
+}
+body.gelap .toggle-tema {color:#f1f1f1;}
+#dropdownBahasa {
+  padding:5px 10px; border-radius:8px; border:1px solid #ccc;
+  font-size:1rem; cursor:pointer;
+  transition: background 0.3s, color 0.3s, border 0.3s;
+}
+body.gelap #dropdownBahasa { background:#2c2c2c; color:#f1f1f1; border:1px solid #555;}
+
+/* ===== Profil ===== */
+.profil { margin-top:80px; text-align:center; }
+.profil img { width:120px; height:120px; border-radius:50%; border:3px solid #ddd; transition: transform 0.2s; }
+.profil img:hover { transform:scale(1.05); }
+.profil h2 { margin-top:10px; font-size:1.5rem; color:inherit; }
+
+/* ===== Search + Filter Horizontal ===== */
+.search-filter-container {
+  margin-top:20px; width:100%; max-width:500px; 
+  display:flex; gap:10px; justify-content:center;
+}
+.search-filter-container input {
+  flex:1; padding:10px 15px; border-radius:25px; border:1px solid #ccc; outline:none; font-size:1rem;
+  transition: background 0.3s, color 0.3s, border 0.3s;
+}
+body.gelap .search-filter-container input { background:#2c2c2c; color:#f1f1f1; border:1px solid #555; }
+.search-filter-container select {
+  padding:10px 15px; border-radius:25px; border:1px solid #ccc; font-size:1rem; cursor:pointer;
+  transition: background 0.3s, color 0.3s, border 0.3s;
+}
+body.gelap .search-filter-container select { background:#2c2c2c; color:#f1f1f1; border:1px solid #555; }
+
+/* ===== Grid Aplikasi ===== */
+.grid-aplikasi {
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:20px; 
+  margin:50px 20px; width:100%; max-width:800px;
+}
+.aplikasi {
+  background:#fff; border-radius:15px; box-shadow:0 8px 20px rgba(0,0,0,0.3);
+  padding:20px; text-align:center; transition: transform 0.3s, background 0.3s, box-shadow 0.3s; perspective:1000px;
+}
+body.gelap .aplikasi { background:#2c2c2c; }
+.aplikasi:hover { transform:rotateX(5deg) rotateY(5deg) translateY(-10px); box-shadow:0 12px 30px rgba(0,0,0,0.5); }
+.aplikasi img, .aplikasi i { width:80px; height:80px; margin-bottom:10px; font-size:3rem; }
+.coming-soon img { opacity:0.8; filter:grayscale(50%); }
+
+/* ===== Nama & Tag Aplikasi ===== */
+.aplikasi p { font-weight:bold; color:inherit; margin:0; }
+.aplikasi a { text-decoration:none; color:inherit; }
+.aplikasi .tags {
+  display:inline-block; margin-top:5px; padding:3px 8px; border:1px solid #007bff; border-radius:10px;
+  font-size:0.8rem; color:#007bff;
+}
+body.gelap .aplikasi .tags { border:1px solid #66b3ff; color:#66b3ff; }
+
+</style>
 </head>
 <body>
 
-<i class="fas fa-moon toggle-tema" id="toggleTema" title="Ganti Tema"></i>
-<select id="dropdownBahasa">
-  <option value="auto">Auto</option>
-  <option value="en">English</option>
-  <option value="id">Indonesia</option>
-</select>
-
-<select id="filterTag">
-  <option value="all">Semua</option>
-</select>
-
+<!-- Profil -->
 <div class="profil">
   <a href="https://github.com/KuningMinum" target="_blank">
-    <img src="https://avatars.fastly.steamstatic.com/0cd1a09ea56f2f46003cf297f1b3406198d8bd07_full.jpg" alt="Profil Kuningminum">
+    <img src="https://avatars.fastly.steamstatic.com/0cd1a09ea56f2f46003cf297f1b3406198d8bd07_full.jpg" alt="Owner Profile">
     <h2>@kuningminum</h2>
   </a>
 </div>
 
-<div class="search-container">
-  <input type="text" id="searchApp" placeholder="Cari aplikasi... 🔍">
+<!-- Search + Filter -->
+<div class="search-filter-container">
+  <input type="text" id="searchApp" placeholder="Search apps... 🔍">
+  <select id="filterTag"><option value="all">All</option></select>
 </div>
 
+<!-- Grid aplikasi -->
 <div class="grid-aplikasi" id="gridAplikasi"></div>
+
+<!-- Floating Controls -->
+<div class="floating-controls">
+  <select id="dropdownBahasa">
+    <option value="auto">Auto</option>
+    <option value="en">English</option>
+    <option value="id">Indonesia</option>
+  </select>
+  <i class="fas fa-moon toggle-tema" id="toggleTema" title="Toggle Theme"></i>
+</div>
 
 <script>
 const toggle = document.getElementById('toggleTema');
@@ -42,113 +120,81 @@ const filterTag = document.getElementById('filterTag');
 
 let currentLang = localStorage.getItem('lang') || 'auto';
 dropdown.value = currentLang;
-
 let allApps = [];
 
-// Ambil data JSON
+// Toggle Theme
+toggle.addEventListener('click', ()=>{
+  document.body.classList.toggle('gelap'); 
+  toggle.classList.toggle('fa-sun'); 
+  toggle.classList.toggle('fa-moon');
+});
+
+// Load JSON
 fetch('Website/index file/items.json')
 .then(res => res.json())
 .then(data => {
   allApps = data;
 
-  // Buat dropdown tag otomatis
+  // Dropdown tag otomatis
   const tagSet = new Set();
   data.forEach(item => {
-    if(item.tags){
-      item.tags.split(',').forEach(tag => tagSet.add(tag.trim()));
-    }
+    if(item.tags){ item.tags.split(',').forEach(tag => tagSet.add(tag.trim())); }
   });
   tagSet.forEach(tag => {
     const option = document.createElement('option');
-    option.value = tag;
-    option.textContent = tag;
+    option.value = tag; option.textContent = tag;
     filterTag.appendChild(option);
   });
 
-  // Tampilkan grid aplikasi
+  // Tampilkan grid
   data.forEach(item => {
-    const div = document.createElement('div');
-    div.classList.add('aplikasi');
+    const div = document.createElement('div'); div.classList.add('aplikasi');
     if(item.icon==='coming-soon') div.classList.add('coming-soon');
     div.setAttribute('data-nama-id', item.nama_id);
     div.setAttribute('data-nama-en', item.nama_en);
     div.setAttribute('data-tags', item.tags || '');
-
-    const a = document.createElement('a');
-    a.href = item.link;
+    
+    const a = document.createElement('a'); a.href = item.link;
     if(item.icon==='coming-soon') a.target='_blank';
 
     if(item.icon==='coming-soon'){
-      const img = document.createElement('img');
-      img.src="https://storytrails.in/wp-content/uploads/2022/04/comingsoon.png";
-      img.alt="Coming Soon";
+      const img = document.createElement('img'); img.src="https://storytrails.in/wp-content/uploads/2022/04/comingsoon.png"; img.alt="Coming Soon";
       a.appendChild(img);
-    } else {
-      const i = document.createElement('i');
-      i.className = item.icon;
-      a.appendChild(i);
-    }
+    } else { const i = document.createElement('i'); i.className = item.icon; a.appendChild(i); }
 
-    const pNama = document.createElement('p');
-    pNama.textContent = item.nama_id;
-    a.appendChild(pNama);
+    const pNama = document.createElement('p'); pNama.textContent = item.nama_en; a.appendChild(pNama);
+    const pTags = document.createElement('p'); pTags.className="tags"; pTags.textContent = item.tags || ''; a.appendChild(pTags);
 
-    const pTags = document.createElement('p');
-    pTags.className = "tags";
-    pTags.textContent = item.tags || '';
-    a.appendChild(pTags);
-
-    div.appendChild(a);
-    grid.appendChild(div);
+    div.appendChild(a); grid.appendChild(div);
   });
-
-  setLanguage(currentLang);
-});
-
-// Fungsi multi bahasa
-function setLanguage(lang){
-  const apps = document.querySelectorAll('.grid-aplikasi .aplikasi');
-  apps.forEach(app=>{
-    const p = app.querySelector('p');
-    let useLang = lang;
-    if(lang==='auto') useLang = navigator.language.startsWith('id') ? 'id':'en';
-    app.querySelector('p').textContent = useLang==='id'? app.getAttribute('data-nama-id'): app.getAttribute('data-nama-en');
-  });
-
-  searchInput.placeholder = (lang==='id'||(lang==='auto'&&navigator.language.startsWith('id')))? "Cari aplikasi... 🔍":"Search apps... 🔍";
-}
-
-// Event ganti bahasa
-dropdown.addEventListener('change', ()=>{
-  currentLang = dropdown.value;
-  localStorage.setItem('lang', currentLang);
-  setLanguage(currentLang);
-  searchInput.value='';
-  document.querySelectorAll('.grid-aplikasi .aplikasi').forEach(app => app.style.display='block');
-  filterTag.value='all';
 });
 
 // Search aplikasi
 searchInput.addEventListener('input', ()=>{
   const query = searchInput.value.toLowerCase();
-  let useLang = currentLang==='auto'? (navigator.language.startsWith('id')?'id':'en'):currentLang;
-  allApps.forEach((item, index) => {
+  allApps.forEach((item, index)=>{
     const div = grid.children[index];
-    const nama = useLang==='id'? item.nama_id.toLowerCase(): item.nama_en.toLowerCase();
-    div.style.display = nama.includes(query)? 'block':'none';
+    div.style.display = item.nama_en.toLowerCase().includes(query)? 'block':'none';
   });
 });
 
-// Filter berdasarkan tag
+// Filter tag
 filterTag.addEventListener('change', e=>{
   const selected = e.target.value;
   allApps.forEach((item, index)=>{
     const div = grid.children[index];
-    const tags = item.tags ? item.tags.split(',') : [];
-    div.style.display = (selected==='all' || tags.includes(selected)) ? 'block' : 'none';
+    const tags = item.tags? item.tags.split(','):[];
+    div.style.display = (selected==='all'||tags.includes(selected))?'block':'none';
   });
 });
-</script>
 
+// Change language
+dropdown.addEventListener('change', ()=>{
+  currentLang = dropdown.value; localStorage.setItem('lang', currentLang);
+  if(currentLang==='en'){ searchInput.placeholder="Search apps... 🔍"; } 
+  else if(currentLang==='id'){ searchInput.placeholder="Cari aplikasi... 🔍"; } 
+  else { searchInput.placeholder = navigator.language.startsWith('id')?"Cari aplikasi... 🔍":"Search apps... 🔍"; }
+});
+</script>
 </body>
 </html>
