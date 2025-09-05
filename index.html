@@ -3,75 +3,149 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Daftar Tag Aplikasi</title>
+<title>Toko Aplikasi Web</title>
 <link rel="stylesheet" href="Website/index file/style.css"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
-<style>
-body {
-  font-family:'Segoe UI', Tahoma, Geneva, Verdana,sans-serif;
-  background: linear-gradient(135deg,#f9f9f9,#e0e0e0);
-  margin:0; padding:20px;
-  display:flex; flex-direction:column; align-items:center;
-  color:#333;
-}
-h1 {margin-bottom:20px;}
-#tagContainer {display:flex; flex-wrap:wrap; gap:10px; justify-content:center;}
-.tagButton {
-  padding:8px 15px;
-  border-radius:20px;
-  border:1px solid #333;
-  cursor:pointer;
-  background:#fff;
-  transition:0.2s;
-}
-.tagButton:hover {
-  background:#333;
-  color:#fff;
-}
-body.gelap {background:#1e1e1e;color:#f1f1f1;}
-body.gelap .tagButton {border:1px solid #f1f1f1;}
-body.gelap .tagButton:hover {background:#f1f1f1; color:#333;}
-.toggle-tema {position:fixed; top:20px; right:20px; font-size:1.5rem; cursor:pointer; color:#333; transition: color 0.3s;}
-body.gelap .toggle-tema {color:#f1f1f1;}
-</style>
 </head>
 <body>
 
 <i class="fas fa-moon toggle-tema" id="toggleTema" title="Ganti Tema"></i>
-<h1>Tag yang tersedia</h1>
-<div id="tagContainer"></div>
+<select id="dropdownBahasa">
+  <option value="auto">Auto</option>
+  <option value="en">English</option>
+  <option value="id">Indonesia</option>
+</select>
+
+<select id="filterTag">
+  <option value="all">Semua</option>
+</select>
+
+<div class="profil">
+  <a href="https://github.com/KuningMinum" target="_blank">
+    <img src="https://avatars.fastly.steamstatic.com/0cd1a09ea56f2f46003cf297f1b3406198d8bd07_full.jpg" alt="Profil Kuningminum">
+    <h2>@kuningminum</h2>
+  </a>
+</div>
+
+<div class="search-container">
+  <input type="text" id="searchApp" placeholder="Cari aplikasi... 🔍">
+</div>
+
+<div class="grid-aplikasi" id="gridAplikasi"></div>
 
 <script>
-const tagContainer = document.getElementById('tagContainer');
 const toggle = document.getElementById('toggleTema');
+const dropdown = document.getElementById('dropdownBahasa');
+const searchInput = document.getElementById('searchApp');
+const grid = document.getElementById('gridAplikasi');
+const filterTag = document.getElementById('filterTag');
 
-// Toggle tema gelap/terang
-toggle.addEventListener('click', ()=>{
-  document.body.classList.toggle('gelap'); 
-  toggle.classList.toggle('fa-sun'); 
-  toggle.classList.toggle('fa-moon');
-});
+let currentLang = localStorage.getItem('lang') || 'auto';
+dropdown.value = currentLang;
+
+let allApps = [];
 
 // Ambil data JSON
 fetch('Website/index file/items.json')
 .then(res => res.json())
 .then(data => {
-  const tagSet = new Set(); // unik
+  allApps = data;
+
+  // Buat dropdown tag otomatis
+  const tagSet = new Set();
   data.forEach(item => {
     if(item.tags){
       item.tags.split(',').forEach(tag => tagSet.add(tag.trim()));
     }
   });
-
-  // tampilkan tag sebagai tombol
   tagSet.forEach(tag => {
-    const btn = document.createElement('button');
-    btn.className = 'tagButton';
-    btn.textContent = tag;
-    btn.addEventListener('click', ()=>{
-      alert(`Filter berdasarkan tag: ${tag}`); // contoh klik tombol
-    });
-    tagContainer.appendChild(btn);
+    const option = document.createElement('option');
+    option.value = tag;
+    option.textContent = tag;
+    filterTag.appendChild(option);
+  });
+
+  // Tampilkan grid aplikasi
+  data.forEach(item => {
+    const div = document.createElement('div');
+    div.classList.add('aplikasi');
+    if(item.icon==='coming-soon') div.classList.add('coming-soon');
+    div.setAttribute('data-nama-id', item.nama_id);
+    div.setAttribute('data-nama-en', item.nama_en);
+    div.setAttribute('data-tags', item.tags || '');
+
+    const a = document.createElement('a');
+    a.href = item.link;
+    if(item.icon==='coming-soon') a.target='_blank';
+
+    if(item.icon==='coming-soon'){
+      const img = document.createElement('img');
+      img.src="https://storytrails.in/wp-content/uploads/2022/04/comingsoon.png";
+      img.alt="Coming Soon";
+      a.appendChild(img);
+    } else {
+      const i = document.createElement('i');
+      i.className = item.icon;
+      a.appendChild(i);
+    }
+
+    const pNama = document.createElement('p');
+    pNama.textContent = item.nama_id;
+    a.appendChild(pNama);
+
+    const pTags = document.createElement('p');
+    pTags.className = "tags";
+    pTags.textContent = item.tags || '';
+    a.appendChild(pTags);
+
+    div.appendChild(a);
+    grid.appendChild(div);
+  });
+
+  setLanguage(currentLang);
+});
+
+// Fungsi multi bahasa
+function setLanguage(lang){
+  const apps = document.querySelectorAll('.grid-aplikasi .aplikasi');
+  apps.forEach(app=>{
+    const p = app.querySelector('p');
+    let useLang = lang;
+    if(lang==='auto') useLang = navigator.language.startsWith('id') ? 'id':'en';
+    app.querySelector('p').textContent = useLang==='id'? app.getAttribute('data-nama-id'): app.getAttribute('data-nama-en');
+  });
+
+  searchInput.placeholder = (lang==='id'||(lang==='auto'&&navigator.language.startsWith('id')))? "Cari aplikasi... 🔍":"Search apps... 🔍";
+}
+
+// Event ganti bahasa
+dropdown.addEventListener('change', ()=>{
+  currentLang = dropdown.value;
+  localStorage.setItem('lang', currentLang);
+  setLanguage(currentLang);
+  searchInput.value='';
+  document.querySelectorAll('.grid-aplikasi .aplikasi').forEach(app => app.style.display='block');
+  filterTag.value='all';
+});
+
+// Search aplikasi
+searchInput.addEventListener('input', ()=>{
+  const query = searchInput.value.toLowerCase();
+  let useLang = currentLang==='auto'? (navigator.language.startsWith('id')?'id':'en'):currentLang;
+  allApps.forEach((item, index) => {
+    const div = grid.children[index];
+    const nama = useLang==='id'? item.nama_id.toLowerCase(): item.nama_en.toLowerCase();
+    div.style.display = nama.includes(query)? 'block':'none';
+  });
+});
+
+// Filter berdasarkan tag
+filterTag.addEventListener('change', e=>{
+  const selected = e.target.value;
+  allApps.forEach((item, index)=>{
+    const div = grid.children[index];
+    const tags = item.tags ? item.tags.split(',') : [];
+    div.style.display = (selected==='all' || tags.includes(selected)) ? 'block' : 'none';
   });
 });
 </script>
