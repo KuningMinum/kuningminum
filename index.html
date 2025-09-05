@@ -16,6 +16,15 @@
   <option value="id">Indonesia</option>
 </select>
 
+<select id="filterTag">
+  <option value="all">Semua</option>
+  <option value="Utility">Utility</option>
+  <option value="Editor">Editor</option>
+  <option value="Game">Game</option>
+  <option value="Produktivitas">Produktivitas</option>
+  <option value="Fun">Fun</option>
+</select>
+
 <div class="profil">
   <a href="https://github.com/KuningMinum" target="_blank">
     <img src="https://avatars.fastly.steamstatic.com/0cd1a09ea56f2f46003cf297f1b3406198d8bd07_full.jpg" alt="Profil Kuningminum">
@@ -40,38 +49,47 @@ toggle.addEventListener('click', ()=>{
 const dropdown = document.getElementById('dropdownBahasa');
 const searchInput = document.getElementById('searchApp');
 const grid = document.getElementById('gridAplikasi');
+const filterTag = document.getElementById('filterTag');
 
 let currentLang = localStorage.getItem('lang') || 'auto';
 dropdown.value = currentLang;
 
+// Ambil data JSON
 fetch('Website/index file/items.json')
-.then(res=>res.json())
-.then(data=>{
-  data.forEach(item=>{
-    const div=document.createElement('div');
+.then(res => res.json())
+.then(data => {
+  data.forEach(item => {
+    const div = document.createElement('div');
     div.classList.add('aplikasi');
     if(item.icon==='coming-soon') div.classList.add('coming-soon');
-    div.setAttribute('data-nama-id',item.nama_id);
-    div.setAttribute('data-nama-en',item.nama_en);
+    div.setAttribute('data-nama-id', item.nama_id);
+    div.setAttribute('data-nama-en', item.nama_en);
+    div.setAttribute('data-tags', item.tags || '');
 
-    const a=document.createElement('a');
-    a.href=item.link;
+    const a = document.createElement('a');
+    a.href = item.link;
     if(item.icon==='coming-soon') a.target='_blank';
 
     if(item.icon==='coming-soon'){
-      const img=document.createElement('img');
+      const img = document.createElement('img');
       img.src="https://storytrails.in/wp-content/uploads/2022/04/comingsoon.png";
       img.alt="Coming Soon";
       a.appendChild(img);
-    }else{
-      const i=document.createElement('i');
-      i.className=item.icon;
+    } else {
+      const i = document.createElement('i');
+      i.className = item.icon;
       a.appendChild(i);
     }
 
-    const p=document.createElement('p');
-    p.textContent=item.nama_id;
-    a.appendChild(p);
+    const pNama = document.createElement('p');
+    pNama.textContent = item.nama_id;
+    a.appendChild(pNama);
+
+    const pTags = document.createElement('p');
+    pTags.className = "tags";
+    pTags.textContent = item.tags || '';
+    a.appendChild(pTags);
+
     div.appendChild(a);
     grid.appendChild(div);
   });
@@ -79,33 +97,50 @@ fetch('Website/index file/items.json')
   setLanguage(currentLang);
 });
 
+// Fungsi multi bahasa
 function setLanguage(lang){
-  const apps=document.querySelectorAll('.grid-aplikasi .aplikasi');
+  const apps = document.querySelectorAll('.grid-aplikasi .aplikasi');
   apps.forEach(app=>{
-    const p=app.querySelector('p');
-    let useLang=lang;
-    if(lang==='auto') useLang=(navigator.language.startsWith('id')?'id':'en');
-    p.textContent=useLang==='id'? app.getAttribute('data-nama-id'): app.getAttribute('data-nama-en');
+    const p = app.querySelector('p');
+    let useLang = lang;
+    if(lang==='auto') useLang = navigator.language.startsWith('id') ? 'id':'en';
+    app.querySelector('p').textContent = useLang==='id'? app.getAttribute('data-nama-id'): app.getAttribute('data-nama-en');
   });
 
   searchInput.placeholder = (lang==='id'||(lang==='auto'&&navigator.language.startsWith('id')))? "Cari aplikasi... 🔍":"Search apps... 🔍";
 }
 
-dropdown.addEventListener('change',()=>{
-  currentLang=dropdown.value;
-  localStorage.setItem('lang',currentLang);
+// Event ganti bahasa
+dropdown.addEventListener('change', ()=>{
+  currentLang = dropdown.value;
+  localStorage.setItem('lang', currentLang);
   setLanguage(currentLang);
   searchInput.value='';
-  document.querySelectorAll('.grid-aplikasi .aplikasi').forEach(app=>app.style.display='block');
+  document.querySelectorAll('.grid-aplikasi .aplikasi').forEach(app => app.style.display='block');
+  filterTag.value='all';
 });
 
-searchInput.addEventListener('input',()=>{
-  const query=searchInput.value.toLowerCase();
-  const apps=document.querySelectorAll('.grid-aplikasi .aplikasi');
-  let useLang=currentLang==='auto'? (navigator.language.startsWith('id')?'id':'en'):currentLang;
+// Search aplikasi
+searchInput.addEventListener('input', ()=>{
+  const query = searchInput.value.toLowerCase();
+  const apps = document.querySelectorAll('.grid-aplikasi .aplikasi');
+  let useLang = currentLang==='auto'? (navigator.language.startsWith('id')?'id':'en'):currentLang;
   apps.forEach(app=>{
-    const nama=useLang==='id'? app.getAttribute('data-nama-id').toLowerCase(): app.getAttribute('data-nama-en').toLowerCase();
-    app.style.display=nama.includes(query)? 'block':'none';
+    const nama = useLang==='id'? app.getAttribute('data-nama-id').toLowerCase(): app.getAttribute('data-nama-en').toLowerCase();
+    app.style.display = nama.includes(query)? 'block':'none';
+  });
+});
+
+// Filter berdasarkan tag
+filterTag.addEventListener('change', e=>{
+  const selected = e.target.value;
+  document.querySelectorAll('.grid-aplikasi .aplikasi').forEach(app=>{
+    const tags = app.getAttribute('data-tags').split(',');
+    if(selected==='all'){
+      app.style.display='block';
+    } else {
+      app.style.display = tags.includes(selected)? 'block':'none';
+    }
   });
 });
 </script>
