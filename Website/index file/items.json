@@ -3,36 +3,21 @@
     "nama_id": "Selisih Waktu",
     "nama_en": "Time Difference",
     "link": "Website/WAKTU.html",
-    "icon": "fas fa-clock"
+    "icon": "fas fa-clock",
+    "tags": "Tool"
   },
   {
     "nama_id": "HTML Editor",
     "nama_en": "HTML Editor",
     "link": "Website/HTML EDITOR.html",
-    "icon": "fas fa-code"
+    "icon": "fas fa-code",
+    "tags": "Tool,Code"
   },
   {
     "nama_id": "Segera Hadir",
     "nama_en": "Coming Soon",
-    "link": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-    "icon": "coming-soon"
-  },
-  {
-    "nama_id": "Segera Hadir",
-    "nama_en": "Coming Soon",
-    "link": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-    "icon": "coming-soon"
-  },
-  {
-    "nama_id": "Segera Hadir",
-    "nama_en": "Coming Soon",
-    "link": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-    "icon": "coming-soon"
-  },
-  {
-    "nama_id": "Segera Hadir",
-    "nama_en": "Coming Soon",
-    "link": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-    "icon": "coming-soon"
+    "link": "#",
+    "icon": "coming-soon",
+    "tags": "Game,Fun"
   }
 ]
