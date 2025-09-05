@@ -6,85 +6,44 @@
 <title>Web App Store</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
 <style>
-/* ===== Body & Tema ===== */
-body { 
-  font-family:'Segoe UI', Tahoma, Geneva, Verdana,sans-serif; 
-  background: linear-gradient(135deg,#f9f9f9,#e0e0e0); 
-  margin:0; padding:0; 
-  display:flex; flex-direction:column; align-items:center; 
-  transition: background 0.3s,color 0.3s; color:#333;
-}
-body.gelap {
-  background:#1e1e1e; 
-  color:#f1f1f1;
-}
+body { font-family:'Segoe UI', Tahoma, Geneva, Verdana,sans-serif; background: linear-gradient(135deg,#f9f9f9,#e0e0e0); margin:0; padding:0; display:flex; flex-direction:column; align-items:center; transition: background 0.3s,color 0.3s; color:#333; }
+body.gelap { background:#1e1e1e; color:#f1f1f1; }
 
-/* ===== Floating Controls (Tema + Bahasa) ===== */
-.floating-controls {
-  position:fixed; bottom:20px; right:20px;
-  display:flex; gap:10px; align-items:center; z-index:999;
-}
-.toggle-tema {
-  font-size:1.5rem; cursor:pointer; color:#333; transition: color 0.3s;
-}
-body.gelap .toggle-tema {color:#f1f1f1;}
-#dropdownBahasa {
-  padding:5px 10px; border-radius:8px; border:1px solid #ccc;
-  font-size:1rem; cursor:pointer;
-  transition: background 0.3s, color 0.3s, border 0.3s;
-}
-body.gelap #dropdownBahasa { background:#2c2c2c; color:#f1f1f1; border:1px solid #555;}
+/* Floating Controls */
+.floating-controls { position:fixed; bottom:20px; right:20px; display:flex; gap:10px; align-items:center; z-index:999; }
+.toggle-tema { font-size:1.5rem; cursor:pointer; color:#333; transition: color 0.3s; }
+body.gelap .toggle-tema { color:#f1f1f1; }
+#dropdownBahasa { padding:5px 10px; border-radius:8px; border:1px solid #ccc; font-size:1rem; cursor:pointer; transition: background 0.3s, color 0.3s, border 0.3s; }
+body.gelap #dropdownBahasa { background:#2c2c2c; color:#f1f1f1; border:1px solid #555; }
 
-/* ===== Profil ===== */
+/* Profil */
 .profil { margin-top:80px; text-align:center; }
 .profil img { width:120px; height:120px; border-radius:50%; border:3px solid #ddd; transition: transform 0.2s; }
 .profil img:hover { transform:scale(1.05); }
 .profil h2 { margin-top:10px; font-size:1.5rem; color:inherit; }
 
-/* ===== Search + Filter Horizontal ===== */
-.search-filter-container {
-  margin-top:20px; width:100%; max-width:500px; 
-  display:flex; gap:10px; justify-content:center;
-}
-.search-filter-container input {
-  flex:1; padding:10px 15px; border-radius:25px; border:1px solid #ccc; outline:none; font-size:1rem;
-  transition: background 0.3s, color 0.3s, border 0.3s;
-}
+/* Search + Filter */
+.search-filter-container { margin-top:20px; width:100%; max-width:500px; display:flex; gap:10px; justify-content:center; }
+.search-filter-container input { flex:1; padding:10px 15px; border-radius:25px; border:1px solid #ccc; outline:none; font-size:1rem; transition: background 0.3s, color 0.3s, border 0.3s; }
 body.gelap .search-filter-container input { background:#2c2c2c; color:#f1f1f1; border:1px solid #555; }
-.search-filter-container select {
-  padding:10px 15px; border-radius:25px; border:1px solid #ccc; font-size:1rem; cursor:pointer;
-  transition: background 0.3s, color 0.3s, border 0.3s;
-}
+.search-filter-container select { padding:10px 15px; border-radius:25px; border:1px solid #ccc; font-size:1rem; cursor:pointer; transition: background 0.3s, color 0.3s, border 0.3s; }
 body.gelap .search-filter-container select { background:#2c2c2c; color:#f1f1f1; border:1px solid #555; }
 
-/* ===== Grid Aplikasi ===== */
-.grid-aplikasi {
-  display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:20px; 
-  margin:50px 20px; width:100%; max-width:800px;
-}
-.aplikasi {
-  background:#fff; border-radius:15px; box-shadow:0 8px 20px rgba(0,0,0,0.3);
-  padding:20px; text-align:center; transition: transform 0.3s, background 0.3s, box-shadow 0.3s; perspective:1000px;
-}
+/* Grid Aplikasi */
+.grid-aplikasi { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:20px; margin:50px 20px; width:100%; max-width:800px; }
+.aplikasi { background:#fff; border-radius:15px; box-shadow:0 8px 20px rgba(0,0,0,0.3); padding:20px; text-align:center; transition: transform 0.3s, background 0.3s, box-shadow 0.3s; perspective:1000px; }
 body.gelap .aplikasi { background:#2c2c2c; }
 .aplikasi:hover { transform:rotateX(5deg) rotateY(5deg) translateY(-10px); box-shadow:0 12px 30px rgba(0,0,0,0.5); }
 .aplikasi img, .aplikasi i { width:80px; height:80px; margin-bottom:10px; font-size:3rem; }
 .coming-soon img { opacity:0.8; filter:grayscale(50%); }
-
-/* ===== Nama & Tag Aplikasi ===== */
 .aplikasi p { font-weight:bold; color:inherit; margin:0; }
 .aplikasi a { text-decoration:none; color:inherit; }
-.aplikasi .tags {
-  display:inline-block; margin-top:5px; padding:3px 8px; border:1px solid #007bff; border-radius:10px;
-  font-size:0.8rem; color:#007bff;
-}
+.aplikasi .tags { display:inline-block; margin-top:5px; padding:3px 8px; border:1px solid #007bff; border-radius:10px; font-size:0.8rem; color:#007bff; }
 body.gelap .aplikasi .tags { border:1px solid #66b3ff; color:#66b3ff; }
-
 </style>
 </head>
 <body>
 
-<!-- Profil -->
 <div class="profil">
   <a href="https://github.com/KuningMinum" target="_blank">
     <img src="https://avatars.fastly.steamstatic.com/0cd1a09ea56f2f46003cf297f1b3406198d8bd07_full.jpg" alt="Owner Profile">
@@ -92,16 +51,13 @@ body.gelap .aplikasi .tags { border:1px solid #66b3ff; color:#66b3ff; }
   </a>
 </div>
 
-<!-- Search + Filter -->
 <div class="search-filter-container">
   <input type="text" id="searchApp" placeholder="Search apps... 🔍">
   <select id="filterTag"><option value="all">All</option></select>
 </div>
 
-<!-- Grid aplikasi -->
 <div class="grid-aplikasi" id="gridAplikasi"></div>
 
-<!-- Floating Controls -->
 <div class="floating-controls">
   <select id="dropdownBahasa">
     <option value="auto">Auto</option>
@@ -141,39 +97,54 @@ fetch('Website/index file/items.json')
     if(item.tags){ item.tags.split(',').forEach(tag => tagSet.add(tag.trim())); }
   });
   tagSet.forEach(tag => {
-    const option = document.createElement('option');
-    option.value = tag; option.textContent = tag;
+    const option = document.createElement('option'); option.value = tag; option.textContent = tag;
     filterTag.appendChild(option);
   });
 
-  // Tampilkan grid
-  data.forEach(item => {
+  renderGrid();
+});
+
+// Render grid
+function renderGrid(){
+  grid.innerHTML = '';
+  allApps.forEach(item=>{
     const div = document.createElement('div'); div.classList.add('aplikasi');
     if(item.icon==='coming-soon') div.classList.add('coming-soon');
-    div.setAttribute('data-nama-id', item.nama_id);
     div.setAttribute('data-nama-en', item.nama_en);
     div.setAttribute('data-tags', item.tags || '');
     
     const a = document.createElement('a'); a.href = item.link;
     if(item.icon==='coming-soon') a.target='_blank';
 
+    // Icon support FA / coming-soon / URL / Random Array
+    let iconEl;
     if(item.icon==='coming-soon'){
-      const img = document.createElement('img'); img.src="https://storytrails.in/wp-content/uploads/2022/04/comingsoon.png"; img.alt="Coming Soon";
-      a.appendChild(img);
-    } else { const i = document.createElement('i'); i.className = item.icon; a.appendChild(i); }
+      iconEl = document.createElement('img');
+      iconEl.src="https://storytrails.in/wp-content/uploads/2022/04/comingsoon.png";
+      iconEl.alt="Coming Soon";
+    } else if(Array.isArray(item.icon)){
+      const rand = item.icon[Math.floor(Math.random()*item.icon.length)];
+      iconEl = document.createElement('img'); iconEl.src=rand;
+    } else if(item.icon.startsWith('http')){
+      iconEl = document.createElement('img'); iconEl.src=item.icon;
+    } else {
+      iconEl = document.createElement('i'); iconEl.className=item.icon;
+    }
+    iconEl.style.width='80px'; iconEl.style.height='80px'; iconEl.style.marginBottom='10px';
+    a.appendChild(iconEl);
 
-    const pNama = document.createElement('p'); pNama.textContent = item.nama_en; a.appendChild(pNama);
-    const pTags = document.createElement('p'); pTags.className="tags"; pTags.textContent = item.tags || ''; a.appendChild(pTags);
+    const pNama = document.createElement('p'); pNama.textContent=item.nama_en; a.appendChild(pNama);
+    const pTags = document.createElement('p'); pTags.className="tags"; pTags.textContent=item.tags || ''; a.appendChild(pTags);
 
     div.appendChild(a); grid.appendChild(div);
   });
-});
+}
 
 // Search aplikasi
 searchInput.addEventListener('input', ()=>{
   const query = searchInput.value.toLowerCase();
-  allApps.forEach((item, index)=>{
-    const div = grid.children[index];
+  Array.from(grid.children).forEach((div,index)=>{
+    const item = allApps[index];
     div.style.display = item.nama_en.toLowerCase().includes(query)? 'block':'none';
   });
 });
@@ -181,9 +152,9 @@ searchInput.addEventListener('input', ()=>{
 // Filter tag
 filterTag.addEventListener('change', e=>{
   const selected = e.target.value;
-  allApps.forEach((item, index)=>{
-    const div = grid.children[index];
-    const tags = item.tags? item.tags.split(','):[];
+  Array.from(grid.children).forEach((div,index)=>{
+    const item = allApps[index];
+    const tags = item.tags? item.tags.split(','): [];
     div.style.display = (selected==='all'||tags.includes(selected))?'block':'none';
   });
 });
@@ -191,10 +162,9 @@ filterTag.addEventListener('change', e=>{
 // Change language
 dropdown.addEventListener('change', ()=>{
   currentLang = dropdown.value; localStorage.setItem('lang', currentLang);
-  if(currentLang==='en'){ searchInput.placeholder="Search apps... 🔍"; } 
-  else if(currentLang==='id'){ searchInput.placeholder="Cari aplikasi... 🔍"; } 
-  else { searchInput.placeholder = navigator.language.startsWith('id')?"Cari aplikasi... 🔍":"Search apps... 🔍"; }
+  searchInput.placeholder = currentLang==='en'?"Search apps... 🔍": currentLang==='id'?"Cari aplikasi... 🔍":(navigator.language.startsWith('id')?"Cari aplikasi... 🔍":"Search apps... 🔍");
 });
 </script>
+
 </body>
 </html>
