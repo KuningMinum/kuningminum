@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Mini HTML IDE — No Line Numbers</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+<style>
+  :root{
+    --tab-bg:#e0e0e0;
+    --panel-bg:#ffffff;
+    --editor-bg:#f5f5f5;
+    --text:#111111;
+    --accent:#2b8cff;
+    --muted: rgba(0,0,0,0.06);
+  }
+  .dark{
+    --tab-bg:#2b2b2b;
+    --panel-bg:#121212;
+    --editor-bg:#1e1e1e;
+    --text:#ffffff;
+    --accent:#4da6ff;
+    --muted: rgba(255,255,255,0.06);
+  }
+  html,body{height:100%;margin:0;font-family:Inter, "Segoe UI", Roboto, monospace;background:var(--panel-bg);color:var(--text);}
+  #tabArea{display:flex;align-items:center;gap:6px;padding:6px;background:var(--tab-bg);border-bottom:1px solid var(--muted);overflow-x:auto;}
+  #addBtn{flex:0 0 auto;margin-left:6px;padding:6px 10px;border-radius:6px;background:transparent;border:1px solid var(--muted);cursor:pointer;color:var(--text);}
+  #addBtn:hover{background:rgba(0,0,0,0.03)}
+  .tab{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:6px;cursor:pointer;user-select:none;background:transparent;border:1px solid transparent;white-space:nowrap;color:var(--text);}
+  .tab.active{ background:var(--panel-bg); border-color:var(--accent); font-weight:600; }
+  .tab .close, .tab .rename{ background:transparent;border:none;cursor:pointer;padding:2px;color:var(--text); }
+  #controls{display:flex;gap:8px;padding:8px;background:transparent;border-bottom:1px solid var(--muted);align-items:center;color:var(--text);}
+  #controls button{padding:6px 10px;border-radius:6px;border:1px solid var(--muted);background:transparent;cursor:pointer;color:var(--text);}
+  #themeToggle{margin-left:auto;padding:6px 10px;border-radius:6px;cursor:pointer;color:var(--text);}
+  #main{display:flex;height:calc(100% - 110px);overflow:hidden;}
+  #editorPane{width:52%;display:flex;background:var(--editor-bg);border-right:1px solid var(--muted);position:relative;min-width:260px;}
+  #editorScroll{flex:1;padding:10px;box-sizing:border-box;overflow:auto;}
+  #codeArea{width:100%;min-height:100%;box-sizing:border-box;border:0;outline:none;background:transparent;font-family:monospace;font-size:14px;line-height:20px;color:var(--text);white-space:pre;resize:none;padding:0;margin:0;}
+  #separator{width:6px;cursor:ew-resize;background:transparent;display:flex;align-items:center;justify-content:center;}
+  #separator:after{content:'';width:2px;height:40px;background:var(--muted);border-radius:2px;}
+  #previewPane{flex:1;padding:10px;box-sizing:border-box;background:var(--panel-bg);color:var(--text);}
+  i.fa-solid { color:var(--text); }
+  @media (max-width:800px){
+    #main{flex-direction:column;height:calc(100% - 110px);}
+    #editorPane{width:100%;height:50%}
+    #previewPane{height:50%}
+    #separator{display:none}
+  }
+</style>
+</head>
+<body>
+  <div id="tabArea" aria-label="Tabs area">
+    <button id="addBtn" title="Add new tab"><i class="fa-solid fa-plus"></i></button>
+  </div>
+  <div id="controls">
+    <button id="undoBtn"><i class="fa-solid fa-rotate-left"></i> Undo</button>
+    <button id="redoBtn"><i class="fa-solid fa-rotate-right"></i> Redo</button>
+    <button id="importBtn"><i class="fa-solid fa-file-import"></i> Import HTML</button>
+    <button id="downloadBtn"><i class="fa-solid fa-download"></i> Download HTML</button>
+    <button id="themeToggle" title="Toggle light / dark"><i class="fa-solid fa-moon"></i> Theme</button>
+  </div>
+  <div id="main">
+    <div id="editorPane">
+      <div id="editorScroll"><textarea id="codeArea" spellcheck="false"></textarea></div>
+    </div>
+    <div id="separator" title="Drag to resize editor"></div>
+    <div id="previewPane"><iframe id="previewFrame" style="width:100%;height:100%;border:0;"></iframe></div>
+  </div>
+  <input id="fileInput" type="file" accept=".html" style="display:none">
+<script>
+const addBtn = document.getElementById('addBtn');
+const tabArea = document.getElementById('tabArea');
+const editorScroll = document.getElementById('editorScroll');
+const codeArea = document.getElementById('codeArea');
+const previewFrame = document.getElementById('previewFrame');
+const fileInput = document.getElementById('fileInput');
+const importBtn = document.getElementById('importBtn');
+const downloadBtn = document.getElementById('downloadBtn');
+const undoBtn = document.getElementById('undoBtn');
+const redoBtn = document.getElementById('redoBtn');
+const separator = document.getElementById('separator');
+const themeToggle = document.getElementById('themeToggle');
+let tabs = [];
+let current = 0;
+let undoStack = [], redoStack = [];
+function saveState() { localStorage.setItem('miniIDE_tabs', JSON.stringify({tabs, current})); }
+function loadState() {
+  const raw = localStorage.getItem('miniIDE_tabs');
+  if(raw) {
+    try {
+      const obj = JSON.parse(raw);
+      if(Array.isArray(obj.tabs) && obj.tabs.length) { tabs = obj.tabs; current = Math.min(obj.current || 0, obj.tabs.length-1); return; }
+    } catch(e){}
+  }
+  tabs = [{name:'Tab1', content:'<h1>Hello</h1>\n<p>Start editing...</p>'}];
+  current = 0;
+}
+function renderTabs() {
+  while(tabArea.firstChild) tabArea.removeChild(tabArea.firstChild);
+  tabArea.appendChild(addBtn);
+  tabs.forEach((t,i)=>{
+    const tab = document.createElement('div');
+    tab.className = 'tab' + (i===current ? ' active' : '');
+    tab.draggable = true;
+    tab.dataset.index = i;
+    tab.innerHTML = `<span style="max-width:180px;overflow:hidden;text-overflow:ellipsis;display:inline-block;vertical-align:middle">${t.name}</span>
+                     <button class="rename" title="Rename"><i class="fa-solid fa-pen"></i></button>
+                     <button class="close" title="Close"><i class="fa-solid fa-xmark"></i></button>`;
+    tab.addEventListener('click', (e)=> {
+      if(e.target.closest('.close')) return;
+      if(e.target.closest('.rename')) return;
+      switchTab(i);
+    });
+    tab.querySelector('.rename').addEventListener('click', (e) => {
+      const newName = prompt('Enter new tab name', tabs[i].name);
+      if(newName) { tabs[i].name = newName; renderTabs(); saveState(); }
+    });
+    tab.querySelector('.close').addEventListener('click', (e) => {
+      e.stopPropagation();
+      const ok = confirm(`Close tab "${tabs[i].name}"?`);
+      if(!ok) return;
+      tabs.splice(i,1);
+      if(current >= tabs.length) current = tabs.length - 1;
+      if(tabs.length === 0) { tabs.push({name:'Tab1',content:''}); current = 0; }
+      switchTab(Math.max(0,current));
+      renderTabs();
+      saveState();
+    });
+    tab.addEventListener('dragstart', (ev) => { ev.dataTransfer.setData('text/plain', i); ev.dataTransfer.effectAllowed = 'move'; });
+    tab.addEventListener('dragover', (ev) => ev.preventDefault());
+    tab.addEventListener('drop', (ev) => {
+      ev.preventDefault();
+      const from = parseInt(ev.dataTransfer.getData('text/plain'));
+      const to = i;
+      if(from===to) return;
+      const item = tabs.splice(from,1)[0];
+      tabs.splice(to,0,item);
+      if(current === from) current = to;
+      else if(from < current && to >= current) current--;
+      else if(from > current && to <= current) current++;
+      renderTabs(); saveState();
+    });
+    tabArea.appendChild(tab);
+  });
+}
+codeArea.addEventListener('input', ()=> {
+  tabs[current].content = codeArea.value;
+  undoStack.push(codeArea.value);
+  redoStack = [];
+  updatePreview();
+  saveState();
+});
+function switchTab(i) {
+  if(i<0 || i>=tabs.length) return;
+  if(tabs[current]) tabs[current].content = codeArea.value;
+  current = i;
+  codeArea.value = tabs[current].content || '';
+  updatePreview();
+  renderTabs();
+  saveState();
+}
+function updatePreview(){ previewFrame.srcdoc = codeArea.value; }
+undoBtn.addEventListener('click', ()=>{
+  if(undoStack.length > 1){
+    redoStack.push(undoStack.pop());
+    const val = undoStack[undoStack.length-1];
+    codeArea.value = val;
+    tabs[current].content = val;
+    updatePreview(); saveState();
+  }
+});
+redoBtn.addEventListener('click', ()=>{
+  if(redoStack.length){
+    const val = redoStack.pop();
+    codeArea.value = val;
+    undoStack.push(val);
+    tabs[current].content = val;
+    updatePreview(); saveState();
+  }
+});
+addBtn.addEventListener('click', ()=> {
+  if(tabs[current]) tabs[current].content = codeArea.value;
+  tabs.push({name:`Tab${tabs.length+1}`, content: ''});
+  current = tabs.length-1;
+  codeArea.value = '';
+  undoStack = []; redoStack = [];
+  renderTabs(); updatePreview(); saveState();
+});
+importBtn.addEventListener('click', ()=> fileInput.click());
+fileInput.addEventListener('change', async (e) => {
+  const f = e.target.files[0]; if(!f) return;
+  const txt = await f.text();
+  if(tabs[current]) tabs[current].content = codeArea.value;
+  tabs.push({name: f.name.replace(/\.html?$/i, ''), content: txt});
+  current = tabs.length-1;
+  codeArea.value = txt;
+  undoStack = [txt]; redoStack = [];
+  renderTabs(); updatePreview(); saveState();
+  fileInput.value = '';
+});
+downloadBtn.addEventListener('click', ()=> {
+  const name = prompt('Enter filename for HTML (without extension):', tabs[current].name || 'download');
+  if(!name) return;
+  const blob = new Blob([codeArea.value], {type:'text/html'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name.trim() + '.html';
+  a.click();
+});
+function applyTheme(t) {
+  if(t === 'dark') document.documentElement.classList.add('dark');
+  else document.documentElement.classList.remove('dark');
+  localStorage.setItem('miniIDE_theme', t);
+}
+themeToggle.addEventListener('click', ()=>{
+  const cur = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+  applyTheme(cur === 'dark' ? 'light' : 'dark');
+});
+(function initTheme(){
+  const saved = localStorage.getItem('miniIDE_theme');
+  if(saved) applyTheme(saved);
+  else {
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    applyTheme(prefersDark ? 'dark' : 'light');
+  }
+})();
+let resizing=false;
+separator.addEventListener('mousedown', ()=> { resizing=true; document.body.style.cursor='ew-resize'; });
+document.addEventListener('mousemove', (e)=> {
+  if(!resizing) return;
+  const x = e.clientX;
+  const min = 220; const max = window.innerWidth - 300;
+  const w = Math.max(min, Math.min(max, x));
+  document.getElementById('editorPane').style.width = w + 'px';
+});
+document.addEventListener('mouseup', ()=> { if(resizing) {resizing=false; document.body.style.cursor='default'; } });
+loadState();
+renderTabs();
+codeArea.value = tabs[current].content || '';
+undoStack = [codeArea.value];
+redoStack = [];
+updatePreview();
+window.addEventListener('load', ()=> {});
+window.addEventListener('keydown', (e)=>{
+  if((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's'){ e.preventDefault(); downloadBtn.click(); }
+  if((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z'){ e.preventDefault(); undoBtn.click(); }
+  if((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 'y' || (e.shiftKey && e.key.toLowerCase()==='z'))){ e.preventDefault(); redoBtn.click(); }
+});
+</script>
+</body>
+</html>
