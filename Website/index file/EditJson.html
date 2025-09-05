@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JSON Editor with Preview</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+<style>
+body { font-family:'Segoe UI', Tahoma, Geneva, Verdana,sans-serif; margin:0; padding:20px; background:#f0f2f5; color:#333;}
+h1 { text-align:center; margin-bottom:20px; color:#444; }
+.tabs { display:flex; justify-content:center; gap:20px; margin-bottom:20px; cursor:pointer; }
+.tab { padding:10px 20px; background:#e0e0e0; border-radius:8px; transition:0.2s; }
+.tab.active { background:#007bff; color:#fff; }
+
+#editor, #preview { display:none; }
+#editor.active, #preview.active { display:block; }
+
+#addForm {
+  max-width:800px; margin:0 auto 20px auto; background:#fff; padding:20px; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.1);
+}
+#addForm input, #addForm select { width:100%; padding:10px; margin:8px 0; border-radius:8px; border:1px solid #ccc; }
+#addForm button { padding:10px 15px; margin-top:10px; margin-right:5px; cursor:pointer; border:none; border-radius:8px; background:#007bff; color:#fff; transition:0.2s; }
+#addForm button:hover { background:#0056b3; transform:translateY(-2px); }
+#addForm button.delete { background:#dc3545; }
+#addForm button.delete:hover { background:#a71d2a; }
+#addForm button.duplicate { background:#17a2b8; }
+#addForm button.duplicate:hover { background:#117a8b; }
+
+textarea { width:100%; max-width:800px; height:150px; margin:10px auto; display:block; padding:10px; border-radius:10px; border:1px solid #ccc; font-family: monospace; resize: vertical; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);}
+
+.table-container { display:flex; max-width:800px; margin:0 auto; gap:10px; }
+#appList { flex:1; border-collapse: collapse; background:#fff; border-radius:10px; overflow:hidden; box-shadow:0 4px 15px rgba(0,0,0,0.1); }
+#appList th, #appList td { border-bottom:1px solid #ddd; padding:10px; text-align:center; }
+#appList th { background:#f4f6f8; }
+#appList tr:hover { background:#e0f0ff; cursor:pointer; }
+
+#moveButtons { display:flex; flex-direction:column; gap:5px; }
+#moveButtons button { padding:8px 12px; border:none; border-radius:6px; background:#ffc107; color:#fff; cursor:pointer; transition:0.2s; }
+#moveButtons button:hover { background:#e0a800; }
+
+.preview-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:15px; max-width:800px; margin:20px auto; }
+.preview-item { background:#fff; border-radius:12px; padding:10px; text-align:center; box-shadow:0 4px 10px rgba(0,0,0,0.1); transition: transform 0.2s, box-shadow 0.2s; }
+.preview-item:hover { transform:translateY(-5px); box-shadow:0 6px 20px rgba(0,0,0,0.15); }
+.preview-item img, .preview-item i { width:60px; height:60px; margin-bottom:8px; font-size:2rem; }
+.preview-item p { margin:4px 0; font-weight:bold; font-size:0.9rem; }
+.tags { font-size:0.8rem; color:#555; border:1px solid #ccc; border-radius:6px; padding:2px 4px; display:inline-block; margin:2px 0; }
+button.download-btn { display:block; max-width:200px; margin:20px auto; background:#28a745; color:#fff; padding:10px; border:none; border-radius:8px; cursor:pointer; }
+button.download-btn:hover { background:#1e7e34; }
+</style>
+</head>
+<body>
+
+<h1>JSON Editor with Preview</h1>
+
+<div class="tabs">
+  <div class="tab active" id="tabEditor">Editor</div>
+  <div class="tab" id="tabPreview">Preview</div>
+</div>
+
+<div id="editor" class="active">
+  <div id="addForm">
+    <h3>Add / Edit Item</h3>
+    <input type="hidden" id="editIndex">
+    <label>Name (EN):</label><input type="text" id="nama_en">
+    <label>Name (ID):</label><input type="text" id="nama_id">
+    <label>Icon (FontAwesome class or 'coming-soon'):</label><input type="text" id="icon" placeholder="fas fa-star or coming-soon">
+    <label>Link:</label><input type="text" id="link">
+    <label>Tags (comma separated):</label><input type="text" id="tags">
+    <br>
+    <button onclick="addOrUpdateItem()">Save Item</button>
+    <button onclick="resetForm()">Reset Form</button>
+    <button onclick="addNewItem()">Add New Item</button>
+    <button class="delete" onclick="deleteCurrentItem()">Delete Item</button>
+    <button class="duplicate" onclick="duplicateItem()">Duplicate Item</button>
+  </div>
+
+  <textarea id="jsonInput" placeholder='Paste JSON here and click Load JSON'></textarea>
+  <button onclick="loadJSON()" style="background:#17a2b8; color:#fff;">Load JSON</button>
+
+  <div class="table-container">
+    <table id="appList">
+      <thead>
+        <tr>
+          <th>EN Name</th>
+          <th>ID Name</th>
+          <th>Icon</th>
+          <th>Link</th>
+          <th>Tags</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <div id="moveButtons">
+      <button onclick="moveUp()">⬆️ Up</button>
+      <button onclick="moveDown()">⬇️ Down</button>
+    </div>
+  </div>
+
+  <button class="download-btn" onclick="downloadJSON()">Download JSON</button>
+</div>
+
+<div id="preview">
+  <div class="preview-grid" id="previewGrid"></div>
+</div>
+
+<script>
+let data = [];
+
+// Tab switching
+document.getElementById('tabEditor').addEventListener('click',()=>{
+  document.getElementById('editor').classList.add('active');
+  document.getElementById('preview').classList.remove('active');
+  document.getElementById('tabEditor').classList.add('active');
+  document.getElementById('tabPreview').classList.remove('active');
+});
+document.getElementById('tabPreview').addEventListener('click',()=>{
+  document.getElementById('preview').classList.add('active');
+  document.getElementById('editor').classList.remove('active');
+  document.getElementById('tabPreview').classList.add('active');
+  document.getElementById('tabEditor').classList.remove('active');
+  renderPreview();
+});
+
+// Render table
+function renderTable() {
+  const tbody = document.querySelector('#appList tbody');
+  tbody.innerHTML = '';
+  data.forEach((item,index)=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${item.nama_en}</td>
+      <td>${item.nama_id}</td>
+      <td>${item.icon}</td>
+      <td>${item.link}</td>
+      <td>${item.tags}</td>
+    `;
+    tr.addEventListener('click',()=>editItem(index));
+    tbody.appendChild(tr);
+  });
+  document.getElementById('jsonInput').value = JSON.stringify(data,null,2);
+  renderPreview();
+}
+
+// Render preview
+function renderPreview() {
+  const grid = document.getElementById('previewGrid');
+  grid.innerHTML = '';
+  data.forEach(item=>{
+    const div = document.createElement('div'); div.className='preview-item';
+    if(item.icon==='coming-soon'){ 
+      const img = document.createElement('img'); img.src="https://storytrails.in/wp-content/uploads/2022/04/comingsoon.png"; img.alt="Coming Soon"; div.appendChild(img);
+    } else if(item.icon.trim()!==''){ const i = document.createElement('i'); i.className = item.icon; div.appendChild(i);}
+    const pName = document.createElement('p'); pName.textContent=item.nama_en; div.appendChild(pName);
+    if(item.tags){ item.tags.split(',').forEach(tag=>{ const t=document.createElement('span'); t.className='tags'; t.textContent=tag.trim(); div.appendChild(t);});}
+    grid.appendChild(div);
+  });
+}
+
+// Load JSON
+function loadJSON() {
+  try{
+    const parsed = JSON.parse(document.getElementById('jsonInput').value);
+    if(Array.isArray(parsed)){ data=parsed; renderTable(); alert('JSON loaded!'); } 
+    else { alert('JSON must be an array!'); }
+  }catch(e){ alert('Invalid JSON: '+e.message); }
+}
+
+// Add / Update
+function addOrUpdateItem() {
+  const index=document.getElementById('editIndex').value;
+  const item = {
+    nama_en: document.getElementById('nama_en').value,
+    nama_id: document.getElementById('nama_id').value,
+    icon: document.getElementById('icon').value,
+    link: document.getElementById('link').value,
+    tags: document.getElementById('tags').value
+  };
+  if(index===''){ data.push(item); } else { data[index]=item; }
+  renderTable(); resetForm();
+}
+
+// Reset form
+function resetForm() {
+  document.getElementById('editIndex').value='';
+  document.getElementById('nama_en').value='';
+  document.getElementById('nama_id').value='';
+  document.getElementById('icon').value='';
+  document.getElementById('link').value='';
+  document.getElementById('tags').value='';
+}
+
+// Edit
+function editItem(index){
+  const item = data[index];
+  document.getElementById('editIndex').value=index;
+  document.getElementById('nama_en').value=item.nama_en;
+  document.getElementById('nama_id').value=item.nama_id;
+  document.getElementById('icon').value=item.icon;
+  document.getElementById('link').value=item.link;
+  document.getElementById('tags').value=item.tags;
+}
+
+// Delete
+function deleteCurrentItem(){
+  const index=document.getElementById('editIndex').value;
+  if(index===''){ alert('No item selected'); return;}
+  if(confirm('Delete this item?')){ data.splice(index,1); renderTable(); resetForm(); }
+}
+
+// Add new blank
+function addNewItem(){ resetForm(); document.getElementById('editIndex').value=''; }
+
+// Duplicate
+function duplicateItem(){
+  const index=document.getElementById('editIndex').value;
+  if(index===''){ alert('No item selected to duplicate'); return;}
+  const item = data[index];
+  const clone = {...item};
+  data.splice(Number(index)+1,0,clone);
+  renderTable();
+  resetForm();
+  alert('Item duplicated!');
+}
+
+// Move Up
+function moveUp(){
+  const index=document.getElementById('editIndex').value;
+  if(index===''){ alert('No item selected'); return;}
+  const i=Number(index);
+  if(i===0){ alert('Already at top'); return;}
+  [data[i-1], data[i]] = [data[i], data[i-1]];
+  renderTable();
+  document.getElementById('editIndex').value=i-1;
+}
+
+// Move Down
+function moveDown(){
+  const index=document.getElementById('editIndex').value;
+  if(index===''){ alert('No item selected'); return;}
+  const i=Number(index);
+  if(i===data.length-1){ alert('Already at bottom'); return;}
+  [data[i+1], data[i]] = [data[i], data[i+1]];
+  renderTable();
+  document.getElementById('editIndex').value=i+1;
+}
+
+// Download
+function downloadJSON(){
+  const blob = new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download='items.json'; a.click();
+  URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>
