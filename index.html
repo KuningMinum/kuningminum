@@ -1,41 +1,183 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Halaman Utama</title>
-  <style>
-    body {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #f0f0f0;
-    }
-    button {
-      padding: 12px 24px;
-      font-size: 18px;
-      cursor: pointer;
-      border: none;
-      border-radius: 8px;
-      background: linear-gradient(90deg, #4facfe, #00f2fe);
-      color: white;
-      transition: 0.3s;
-    }
-    button:hover {
-      transform: scale(1.05);
-      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Toko Aplikasi Web</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+<style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #f9f9f9, #e0e0e0);
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: background 0.3s, color 0.3s;
+    color: #333;
+  }
+
+  /* Tema Gelap */
+  body.gelap {
+    background: #1e1e1e;
+    color: #f1f1f1;
+  }
+
+  /* Toggle Tema */
+  .toggle-tema {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #333;
+    transition: color 0.3s;
+  }
+
+  body.gelap .toggle-tema {
+    color: #f1f1f1;
+  }
+
+  .profil {
+    margin-top: 80px;
+    text-align: center;
+  }
+
+  .profil a {
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .profil img {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    border: 3px solid #ddd;
+    transition: transform 0.2s;
+  }
+
+  .profil img:hover {
+    transform: scale(1.05);
+  }
+
+  .profil h2 {
+    margin-top: 10px;
+    font-size: 1.5rem;
+    transition: color 0.2s, text-decoration 0.2s;
+  }
+
+  .profil h2:hover {
+    color: #007bff;
+    text-decoration: underline;
+  }
+
+  .grid-aplikasi {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 20px;
+    margin: 50px 20px;
+    width: 100%;
+    max-width: 800px;
+  }
+
+  .aplikasi {
+    background: #fff;
+    border-radius: 15px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    padding: 20px;
+    text-align: center;
+    transition: transform 0.2s, background 0.3s;
+  }
+
+  body.gelap .aplikasi {
+    background: #2c2c2c;
+  }
+
+  .aplikasi:hover {
+    transform: translateY(-5px);
+  }
+
+  .aplikasi img {
+    width: 80px;
+    height: 80px;
+    margin-bottom: 10px;
+  }
+
+  .coming-soon img {
+    opacity: 0.8;
+    filter: grayscale(50%);
+  }
+
+  .aplikasi p {
+    font-weight: bold;
+    color: inherit;
+    margin: 0;
+  }
+
+  .aplikasi a {
+    text-decoration: none;
+    color: inherit;
+  }
+</style>
 </head>
 <body>
-  <button onclick="bukaWaktu()">Buka Halaman Waktu</button>
 
-  <script>
-    function bukaWaktu() {
-      window.location.href = "WAKTU.html";
-    }
-  </script>
+<!-- Toggle Tema -->
+<i class="fas fa-moon toggle-tema" id="toggleTema" title="Ganti Tema"></i>
+
+<!-- Profil Pemilik -->
+<div class="profil">
+  <a href="https://github.com/KuningMinum" target="_blank">
+    <img src="https://avatars.fastly.steamstatic.com/0cd1a09ea56f2f46003cf297f1b3406198d8bd07_full.jpg" alt="Profil Kuningminum">
+    <h2>@kuningminum</h2>
+  </a>
+</div>
+
+<!-- Grid Aplikasi -->
+<div class="grid-aplikasi">
+  <!-- Aplikasi Sudah Ada -->
+  <div class="aplikasi">
+    <a href="WAKTU.html">
+      <img src="https://icon-icons.com/icons2/517/PNG/512/clock_time_icon-icons.com_51107.png" alt="Waktu">
+      <p id="namaAplikasi">Waktu</p>
+    </a>
+  </div>
+
+  <!-- Aplikasi Coming Soon -->
+  <div class="aplikasi coming-soon">
+    <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" target="_blank">
+      <img src="https://storytrails.in/wp-content/uploads/2022/04/comingsoon.png" alt="Coming Soon">
+      <p>Coming Soon</p>
+    </a>
+  </div>
+
+  <div class="aplikasi coming-soon">
+    <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" target="_blank">
+      <img src="https://storytrails.in/wp-content/uploads/2022/04/comingsoon.png" alt="Coming Soon">
+      <p>Coming Soon</p>
+    </a>
+  </div>
+</div>
+
+<script>
+  // Toggle Tema
+  const toggle = document.getElementById('toggleTema');
+  toggle.addEventListener('click', () => {
+    document.body.classList.toggle('gelap');
+    toggle.classList.toggle('fa-sun');
+    toggle.classList.toggle('fa-moon');
+  });
+
+  // Nama Aplikasi sesuai bahasa pengguna
+  const namaApp = document.getElementById('namaAplikasi');
+  const bahasa = navigator.language || navigator.userLanguage; // contoh: "id-ID" atau "en-US"
+  if (bahasa.startsWith('id')) {
+    namaApp.textContent = 'Selisih Waktu';
+  } else {
+    namaApp.textContent = 'Time Difference';
+  }
+</script>
+
 </body>
 </html>
