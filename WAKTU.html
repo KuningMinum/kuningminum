@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>⏱️ Hitung Selisih Waktu</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+<style>
+  body {
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #181818;
+    color: #fff;
+    padding: 20px;
+    text-align: center;
+    transition: background-color 0.3s, color 0.3s;
+  }
+  .kotak {
+    background: #222;
+    padding: 25px 30px;
+    border-radius: 20px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6);
+    display: inline-block;
+    max-width: 460px;
+    margin-top: 20px;
+    text-align: left;
+  }
+  input[type="time"], input[type="date"], select {
+    font-size: 16px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: none;
+    box-shadow: inset 0 0 6px rgba(0,0,0,0.5);
+    margin-top: 8px;
+    width: 165px;
+  }
+  #hasil {
+    margin-top: 18px;
+    font-size: 16px;
+    background-color: #2a2a2a;
+    padding: 12px;
+    border-radius: 12px;
+    box-shadow: inset 0 0 6px rgba(255,255,255,0.05);
+    min-height: 48px;
+    font-weight: 600;
+    user-select: none;
+  }
+  .shortcut-container { margin-top: 14px; }
+  .shortcut-btn {
+    padding: 8px 12px;
+    font-size: 14px;
+    margin: 6px 6px 6px 0;
+    border-radius: 12px;
+    background-color: #444;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: background-color 0.25s;
+  }
+  .shortcut-btn:hover { background-color: #666; }
+  .popup {
+    display: none;
+    position: fixed; top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+    background: #333; color: #fff;
+    padding: 20px; border-radius: 14px;
+    box-shadow: 0 0 18px #000; z-index: 1000;
+    max-width: 420px; width: 92%;
+  }
+  .popup textarea { width:100%; height:90px; padding:10px; border-radius:10px; border:none; background:#222; color:#eee; }
+  .popup button { margin-top:10px; padding:10px 14px; border-radius:12px; border:none; cursor:pointer; background:#555; color:#fff; }
+  #overlay { position:fixed; display:none; top:0;left:0;right:0;bottom:0; background:rgba(0,0,0,0.6); z-index:999; }
+
+  label.switch { display:inline-flex; align-items:center; gap:10px; cursor:pointer; margin:8px 0; }
+  label.switch input[type="checkbox"] { width:40px; height:22px; appearance:none; background:#444; border-radius:34px; position:relative; }
+  label.switch input[type="checkbox"]:checked { background:#4caf50; }
+  label.switch input[type="checkbox"]::before { content:""; position:absolute; width:18px; height:18px; border-radius:50%; top:2px; left:2px; background:#fff; transition:0.3s; }
+  label.switch input[type="checkbox"]:checked::before { transform:translateX(18px); }
+  /* disabled style for checkbox */
+  label.switch input[type="checkbox"]:disabled { opacity:0.45; cursor:not-allowed; }
+
+  .credit-kuning { color:#ffdd00; font-weight:700; margin-top:10px; text-align:center; }
+  .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  .col { display:flex; flex-direction:column; gap:6px; }
+  .small { font-size:13px; opacity:0.8; }
+
+  /* responsif */
+  @media (max-width:520px){
+    .kotak { width: 100%; box-sizing:border-box; }
+    input[type="time"], input[type="date"], select { width: 100%; }
+  }
+</style>
+</head>
+<body>
+  <h2 id="judul">⏱️ Hitung Selisih Waktu</h2>
+
+  <div class="kotak" role="main">
+    <div class="col">
+      <label id="lbl_waktu_tujuan">Waktu Tujuan:</label>
+      <input type="time" id="waktuTujuan" />
+    </div>
+
+    <div id="inputWaktuAwalContainer" style="margin-top:12px; display:none;" class="col">
+      <label id="lbl_waktu_awal">Waktu Awal (manual):</label>
+      <input type="time" id="waktuAwal" />
+    </div>
+
+    <div id="tanggalContainer" style="margin-top:12px; display:none;">
+      <div class="col">
+        <label id="lbl_tanggal_awal">Tanggal Awal:</label>
+        <input type="date" id="tanggalAwal" />
+      </div>
+      <div style="height:8px"></div>
+      <div class="col">
+        <label id="lbl_tanggal_tujuan">Tanggal Tujuan:</label>
+        <input type="date" id="tanggalTujuan" />
+      </div>
+    </div>
+
+    <div id="hasil">Masukkan waktu tujuan</div>
+
+    <div style="margin-top:12px;">
+      <button class="shortcut-btn" onclick="bukaPengaturan()"><i class="fa fa-gear"></i> <span id="txt_pengaturan">Pengaturan</span></button>
+      <button class="shortcut-btn" onclick="bukaPopup()"><i class="fa fa-pencil"></i> <span id="txt_edit_shortcut">Edit Shortcut</span></button>
+      <button class="shortcut-btn" onclick="masukkanKeShortcutVisible()"><i class="fa fa-plus-circle"></i> <span id="txt_masuk_shortcut">Masukkan ke Shortcut</span></button>
+    </div>
+
+    <div class="shortcut-container" id="shortcutContainer"></div>
+
+    <div class="credit-kuning" id="credit">Made by kuningminum Github</div>
+  </div>
+
+  <!-- Popup Edit Shortcut -->
+  <div class="popup" id="popupEdit" aria-hidden="true">
+    <h3><i class="fa fa-pencil"></i> <span id="txt_edit_shortcut_title">Edit Shortcut Waktu</span></h3>
+    <p class="small" id="txt_edit_shortcut_note">Masukkan waktu (pisahkan dengan koma, contoh: 15.30, 11.00):</p>
+    <textarea id="shortcutInput" spellcheck="false" placeholder="Contoh: 15.30, 11.00, 20.45"></textarea>
+    <div style="display:flex; gap:8px; justify-content:center; margin-top:10px;">
+      <button onclick="simpanShortcut()"><i class="fa fa-floppy-disk"></i> <span id="txt_simpan">Simpan</span></button>
+      <button onclick="tutupPopup()"><i class="fa fa-xmark"></i> <span id="txt_tutup">Tutup</span></button>
+    </div>
+  </div>
+
+  <!-- Popup Pengaturan -->
+  <div class="popup" id="popupPengaturan" aria-hidden="true">
+    <h3><i class="fa fa-gear"></i> <span id="txt_pengaturan_title">Pengaturan</span></h3>
+
+    <div style="margin-top:8px;">
+      <label for="tema" id="lbl_tema">Tema:</label>
+      <select id="tema"><option value="gelap">Gelap</option><option value="terang">Terang</option></select>
+    </div>
+
+    <div style="margin-top:10px;">
+      <label class="switch" title="Tentukan apakah waktu awal dihitung otomatis sekarang atau manual">
+        <input type="checkbox" id="modeWaktuAwal" />
+        <span id="txt_manual_awal">Manual Waktu Awal (nonaktifkan untuk otomatis)</span>
+      </label>
+    </div>
+
+    <div style="margin-top:6px;">
+      <label class="switch" title="Gunakan hari berikutnya jika waktu tujuan sudah lewat hari ini">
+        <input type="checkbox" id="gunakanHariBerikutnya" />
+        <span id="txt_gunakan_hari">Gunakan Hari Berikutnya (tidak disimpan)</span>
+      </label>
+    </div>
+
+    <div style="margin-top:6px;">
+      <label class="switch" title="Aktifkan penggunaan tanggal untuk hitungan waktu">
+        <input type="checkbox" id="aktifkanTanggal" />
+        <span id="txt_aktifkan_tanggal">Aktifkan Penggunaan Tanggal</span>
+      </label>
+    </div>
+
+    <div style="margin-top:6px;">
+      <label class="switch" title="Tampilkan hasil perhitungan tunggal (konversi penuh)">
+        <input type="checkbox" id="perhitunganTunggal" />
+        <span id="txt_perhitungan_tunggal">Perhitungan Tunggal</span>
+      </label>
+    </div>
+
+ <div style="margin-top:6px;">
+  <label class="switch" title="Gunakan satuan tinggi (contoh: 25 jam -> 1 hari 1 jam)">
+    <input type="checkbox" id="gunakanSatuanTinggi" checked />
+    <span id="txt_gunakan_satuan">Gunakan Satuan Tinggi</span>
+  </label>
+</div>
+
+
+    <div style="margin-top:10px;">
+      <label id="lbl_bahasa">Bahasa:</label>
+      <select id="pilihBahasa" title="Auto/Indonesia/English">
+        <option value="auto">Auto</option>
+        <option value="id">Indonesia</option>
+        <option value="en">English</option>
+      </select>
+      <div class="small">Auto: deteksi dari browser</div>
+    </div>
+
+    <div style="display:flex; gap:8px; justify-content:center; margin-top:14px;">
+      <button onclick="tutupPengaturan()"><i class="fa fa-check"></i> <span id="txt_simpan_tutup">Simpan & Tutup</span></button>
+      <button onclick="resetPreferensi()"><i class="fa fa-undo"></i> <span id="txt_reset">Reset Pref</span></button>
+    </div>
+  </div>
+
+  <div id="overlay"></div>
+
+<script>
+/* ======= BAHASA (default dan fallback) ======= */
+const bahasa = {
+  "id": {
+    "judul": "⏱️ Hitung Selisih Waktu",
+    "waktu_tujuan": "Waktu Tujuan:",
+    "waktu_awal": "Waktu Awal (manual):",
+    "tanggal_awal": "Tanggal Awal:",
+    "tanggal_tujuan": "Tanggal Tujuan:",
+    "pengaturan": "Pengaturan",
+    "edit_shortcut": "Edit Shortcut",
+    "masuk_shortcut": "Masukkan ke Shortcut",
+    "edit_shortcut_title": "Edit Shortcut Waktu",
+    "edit_shortcut_note": "Masukkan waktu (pisahkan dengan koma, contoh: 15.30, 11.00):",
+    "simpan": "Simpan",
+    "tutup": "Tutup",
+    "tema": "Tema:",
+    "manual_awal": "Manual Waktu Awal (nonaktifkan untuk otomatis)",
+    "gunakan_hari": "Gunakan Hari Berikutnya (tidak disimpan)",
+    "aktifkan_tanggal": "Aktifkan Penggunaan Tanggal",
+    "perhitungan_tunggal": "Perhitungan Tunggal",
+    "gunakan_satuan": "Gunakan Satuan Tinggi",
+    "bahasa": "Bahasa:",
+    "simpan_tutup": "Simpan & Tutup",
+    "reset": "Reset Pref",
+    "masukkan_waktu_tujuan": "Masukkan waktu tujuan",
+    "tunggu_label": "Tunggu:",
+    "menuju_label": "Menuju:",
+    "sudah_lewat": "Sudah Lewat:",
+    "shortcut_header": "Shortcut Waktu:",
+    "belum_shortcut": "(Belum ada shortcut tersimpan)",
+    "shortcut_ada": "Shortcut sudah ada",
+    "alert_masukkan_waktu": "Masukkan waktu terlebih dahulu.",
+    "preferensi_reset": "Preferensi direset ✅",
+    // unit labels (uppercase final output uses these)
+    "unit_year": "TAHUN",
+    "unit_month": "BULAN",
+    "unit_week": "MINGGU",
+    "unit_day": "HARI",
+    "unit_hour": "JAM",
+    "unit_minute": "MENIT",
+    "unit_second": "DETIK",
+    "unit_ms": "MILIDETIK"
+  },
+  "en": {
+    "judul": "⏱️ Time Difference Calculator",
+    "waktu_tujuan": "Target Time:",
+    "waktu_awal": "Start Time (manual):",
+    "tanggal_awal": "Start Date:",
+    "tanggal_tujuan": "Target Date:",
+    "pengaturan": "Settings",
+    "edit_shortcut": "Edit Shortcut",
+    "masuk_shortcut": "Add to Shortcut",
+    "edit_shortcut_title": "Edit Time Shortcuts",
+    "edit_shortcut_note": "Enter times separated by commas (ex: 15.30, 11.00):",
+    "simpan": "Save",
+    "tutup": "Close",
+    "tema": "Theme:",
+    "manual_awal": "Manual Start Time (disable for auto)",
+    "gunakan_hari": "Use Next Day (not saved)",
+    "aktifkan_tanggal": "Enable Dates",
+    "perhitungan_tunggal": "Single-unit Conversion",
+    "gunakan_satuan": "Use Higher Units",
+    "bahasa": "Language:",
+    "simpan_tutup": "Save & Close",
+    "reset": "Reset Pref",
+    "masukkan_waktu_tujuan": "Enter target time",
+    "tunggu_label": "Waiting:",
+    "menuju_label": "Until:",
+    "sudah_lewat": "Passed:",
+    "shortcut_header": "Time Shortcuts:",
+    "belum_shortcut": "(No shortcuts saved)",
+    "shortcut_ada": "Shortcut already exists",
+    "alert_masukkan_waktu": "Please enter a time first.",
+    "preferensi_reset": "Preferences reset ✅",
+    // unit labels (pluralization handled in code)
+    "unit_year_singular": "YEAR",
+    "unit_year_plural": "YEARS",
+    "unit_month_singular": "MONTH",
+    "unit_month_plural": "MONTHS",
+    "unit_week_singular": "WEEK",
+    "unit_week_plural": "WEEKS",
+    "unit_day_singular": "DAY",
+    "unit_day_plural": "DAYS",
+    "unit_hour_singular": "HOUR",
+    "unit_hour_plural": "HOURS",
+    "unit_minute_singular": "MINUTE",
+    "unit_minute_plural": "MINUTES",
+    "unit_second_singular": "SECOND",
+    "unit_second_plural": "SECONDS",
+    "unit_ms_singular": "MILLISECOND",
+    "unit_ms_plural": "MILLISECONDS"
+  }
+};
+
+/* ======= DOM references ======= */
+const waktuTujuan = document.getElementById("waktuTujuan");
+const hasil = document.getElementById("hasil");
+const temaSelect = document.getElementById("tema");
+const shortcutContainer = document.getElementById("shortcutContainer");
+const popupEdit = document.getElementById("popupEdit");
+const shortcutInput = document.getElementById("shortcutInput");
+const popupPengaturan = document.getElementById("popupPengaturan");
+const modeWaktuAwalCheckbox = document.getElementById("modeWaktuAwal");
+const gunakanHariBerikutnyaCheckbox = document.getElementById("gunakanHariBerikutnya");
+const aktifkanTanggalCheckbox = document.getElementById("aktifkanTanggal");
+const waktuAwalInput = document.getElementById("waktuAwal");
+const inputWaktuAwalContainer = document.getElementById("inputWaktuAwalContainer");
+const tanggalContainer = document.getElementById("tanggalContainer");
+const tanggalAwalInput = document.getElementById("tanggalAwal");
+const tanggalTujuanInput = document.getElementById("tanggalTujuan");
+const overlay = document.getElementById("overlay");
+const perhitunganTunggalCheckbox = document.getElementById("perhitunganTunggal");
+const gunakanSatuanTinggiCheckbox = document.getElementById("gunakanSatuanTinggi");
+const pilihBahasa = document.getElementById("pilihBahasa");
+
+/* ======= UI text elements for i18n ======= */
+const uiTexts = {
+  judul: document.getElementById("judul"),
+  lbl_waktu_tujuan: document.getElementById("lbl_waktu_tujuan"),
+  lbl_waktu_awal: document.getElementById("lbl_waktu_awal"),
+  lbl_tanggal_awal: document.getElementById("lbl_tanggal_awal"),
+  lbl_tanggal_tujuan: document.getElementById("lbl_tanggal_tujuan"),
+  txt_pengaturan: document.getElementById("txt_pengaturan"),
+  txt_edit_shortcut: document.getElementById("txt_edit_shortcut"),
+  txt_masuk_shortcut: document.getElementById("txt_masuk_shortcut"),
+  txt_edit_shortcut_title: document.getElementById("txt_edit_shortcut_title"),
+  txt_edit_shortcut_note: document.getElementById("txt_edit_shortcut_note"),
+  txt_simpan: document.getElementById("txt_simpan"),
+  txt_tutup: document.getElementById("txt_tutup"),
+  lbl_tema: document.getElementById("lbl_tema"),
+  txt_manual_awal: document.getElementById("txt_manual_awal"),
+  txt_gunakan_hari: document.getElementById("txt_gunakan_hari"),
+  txt_aktifkan_tanggal: document.getElementById("txt_aktifkan_tanggal"),
+  txt_perhitungan_tunggal: document.getElementById("txt_perhitungan_tunggal"),
+  txt_gunakan_satuan: document.getElementById("txt_gunakan_satuan"),
+  lbl_bahasa: document.getElementById("lbl_bahasa"),
+  txt_simpan_tutup: document.getElementById("txt_simpan_tutup"),
+  txt_reset: document.getElementById("txt_reset")
+};
+
+/* ======= language helpers ======= */
+function detectBahasa() {
+  const pref = localStorage.getItem("bahasaPref") || "auto";
+  if (pref === "id" || pref === "en") return pref;
+  const nav = navigator.language || navigator.userLanguage || "en";
+  if (nav.toLowerCase().startsWith("id") || nav.toLowerCase().startsWith("in")) return "id";
+  return "en";
+}
+function applyBahasa(lang) {
+  const pack = bahasa[lang] || bahasa["en"];
+  uiTexts.judul.textContent = pack.judul;
+  uiTexts.lbl_waktu_tujuan.textContent = pack.waktu_tujuan;
+  uiTexts.lbl_waktu_awal.textContent = pack.waktu_awal;
+  uiTexts.lbl_tanggal_awal.textContent = pack.tanggal_awal;
+  uiTexts.lbl_tanggal_tujuan.textContent = pack.tanggal_tujuan;
+  uiTexts.txt_pengaturan.textContent = pack.pengaturan;
+  uiTexts.txt_edit_shortcut.textContent = pack.edit_shortcut;
+  uiTexts.txt_masuk_shortcut.textContent = pack.masuk_shortcut;
+  uiTexts.txt_edit_shortcut_title.textContent = pack.edit_shortcut_title;
+  uiTexts.txt_edit_shortcut_note.textContent = pack.edit_shortcut_note;
+  uiTexts.txt_simpan.textContent = pack.simpan;
+  uiTexts.txt_tutup.textContent = pack.tutup;
+  uiTexts.lbl_tema.textContent = pack.tema;
+  uiTexts.txt_manual_awal.textContent = pack.manual_awal;
+  uiTexts.txt_gunakan_hari.textContent = pack.gunakan_hari;
+  uiTexts.txt_aktifkan_tanggal.textContent = pack.aktifkan_tanggal;
+  uiTexts.txt_perhitungan_tunggal.textContent = pack.perhitungan_tunggal;
+  uiTexts.txt_gunakan_satuan.textContent = pack.gunakan_satuan;
+  uiTexts.lbl_bahasa.textContent = pack.bahasa;
+  uiTexts.txt_simpan_tutup.textContent = pack.simpan_tutup;
+  uiTexts.txt_reset.textContent = pack.reset;
+  if (!waktuTujuan.value) hasil.textContent = pack.masukkan_waktu_tujuan;
+}
+
+/* ======= NEW: enforce Use Higher Units when lang=en ======= */
+function enforceUseHigherUnitsByLang(lang) {
+  // Jika bahasa adalah Inggris, paksa aktif dan non-aktifkan kontrolnya
+  if (lang === "en") {
+    gunakanSatuanTinggiCheckbox.checked = true;
+    gunakanSatuanTinggiCheckbox.disabled = true;
+  } else {
+    // Jika bukan English, pulihkan kontrol ke preferensi pengguna
+    gunakanSatuanTinggiCheckbox.disabled = false;
+    // muat preferensi sebelumnya (fallback ke localStorage atau default true)
+    const pref = localStorage.getItem("gunakanSatuanTinggi");
+    gunakanSatuanTinggiCheckbox.checked = (pref === null) ? true : (pref === "true");
+  }
+}
+
+/* ======= load bahasa pref + enforce checkbox behavior ======= */
+function loadBahasaPrefToUI() {
+  const pref = localStorage.getItem("bahasaPref") || "auto";
+  pilihBahasa.value = pref;
+  const lang = (pref === "auto") ? detectBahasa() : pref;
+  applyBahasa(lang);
+  // Enforce rule: jika lang adalah English (detection or explicit), aktifkan & disable checkbox
+  enforceUseHigherUnitsByLang(lang);
+}
+
+/* ======= Theme & Preferences (sama dengan sebelumnya, sedikit adjust) ======= */
+function applyTema() {
+  const tema = temaSelect.value;
+  const isTerang = tema === "terang";
+  document.body.style.backgroundColor = isTerang ? "#fff" : "#181818";
+  document.body.style.color = isTerang ? "#000" : "#fff";
+  const kotak = document.querySelector(".kotak");
+  if (kotak) kotak.style.background = isTerang ? "#eee" : "#222";
+  const popups = document.querySelectorAll(".popup");
+  popups.forEach(p => p.style.background = isTerang ? "#f0f0f0" : "#333");
+  const btns = document.querySelectorAll(".shortcut-btn");
+  btns.forEach(b => b.style.background = isTerang ? "#ccc" : "#444");
+}
+function simpanPreferensi() {
+  localStorage.setItem("tema", temaSelect.value);
+  localStorage.setItem("modeWaktuAwal", modeWaktuAwalCheckbox.checked);
+  localStorage.setItem("aktifkanTanggal", aktifkanTanggalCheckbox.checked);
+  localStorage.setItem("perhitunganTunggal", perhitunganTunggalCheckbox.checked);
+  // jika dikunci (disabled) karena bahasa en, pastikan tetap true
+  if (gunakanSatuanTinggiCheckbox.disabled) {
+    localStorage.setItem("gunakanSatuanTinggi", true);
+  } else {
+    localStorage.setItem("gunakanSatuanTinggi", gunakanSatuanTinggiCheckbox.checked);
+  }
+  localStorage.setItem("bahasaPref", pilihBahasa.value);
+}
+function loadPreferensi() {
+  temaSelect.value = localStorage.getItem("tema") || "gelap";
+  modeWaktuAwalCheckbox.checked = localStorage.getItem("modeWaktuAwal") === "true";
+  aktifkanTanggalCheckbox.checked = localStorage.getItem("aktifkanTanggal") === "true";
+  perhitunganTunggalCheckbox.checked = localStorage.getItem("perhitunganTunggal") === "true";
+  // jangan langsung muat gunakanSatuanTinggi di sini; loadBahasaPrefToUI akan mengurus enforcement
+  loadBahasaPrefToUI();
+  toggleWaktuAwalInput();
+  toggleTanggalInput();
+  applyTema();
+}
+
+/* ======= Popup helpers ======= */
+function showPopup(popup) { popup.style.display = "block"; overlay.style.display = "block"; }
+function hidePopup(popup) { popup.style.display = "none"; overlay.style.display = "none"; }
+overlay.addEventListener("click", () => {
+  if (popupEdit.style.display === "block") hidePopup(popupEdit);
+  if (popupPengaturan.style.display === "block") hidePopup(popupPengaturan);
+});
+
+/* ======= Shortcuts logic (sama) ======= */
+function renderShortcut() {
+  const data = localStorage.getItem("shortcutWaktu") || "";
+  const list = data.split(",").map(s => s.trim()).filter(Boolean);
+  const pack = bahasa[detectBahasa()];
+  let tombolHTML = "";
+  if (list.length) {
+    tombolHTML = list.map(waktu => `
+      <button class="shortcut-btn" onclick="setWaktuShortcut('${waktu}')"><i class="fa fa-clock"></i> ${waktu}</button>
+    `).join("");
+  } else {
+    tombolHTML = `<div style="opacity:0.7; margin-bottom:8px;">${pack.shortcut_header} ${pack.belum_shortcut}</div>`;
+  }
+  shortcutContainer.innerHTML = `
+    <div style="margin-bottom:8px;"><strong>${pack.shortcut_header}</strong></div>
+    <div>${tombolHTML}</div>
+  `;
+}
+function setWaktuShortcut(waktu) {
+  if (!waktu.includes(".")) return;
+  const [jam, menit] = waktu.split(".");
+  const waktuFix = `${jam.padStart(2,"0")}:${menit.padStart(2,"0")}`;
+  waktuTujuan.value = waktuFix;
+  updateSelisih();
+}
+function bukaPopup() {
+  const isi = localStorage.getItem("shortcutWaktu") || "";
+  shortcutInput.value = isi;
+  showPopup(popupEdit);
+}
+function tutupPopup() { hidePopup(popupEdit); }
+function simpanShortcut() {
+  let isi = shortcutInput.value.replace(/[\s\-]+/g, ",").replace(/,+/g, ",").trim();
+  localStorage.setItem("shortcutWaktu", isi);
+  renderShortcut();
+  tutupPopup();
+}
+function masukkanKeShortcutVisible() {
+  const pack = bahasa[detectBahasa()];
+  const waktu = waktuTujuan.value;
+  if (!waktu) return alert(pack.alert_masukkan_waktu);
+  const [jam, menit] = waktu.split(":");
+  const formatShortcut = `${parseInt(jam)}.${parseInt(menit)}`;
+  let isi = localStorage.getItem("shortcutWaktu") || "";
+  let list = isi.split(",").map(s => s.trim()).filter(Boolean);
+  if (!list.includes(formatShortcut)) {
+    list.push(formatShortcut);
+    localStorage.setItem("shortcutWaktu", list.join(", "));
+    renderShortcut();
+  } else {
+    alert(pack.shortcut_ada);
+  }
+}
+
+/* ======= New: format full breakdown including milliseconds ======= */
+function formatFullUnits(totalMs, lang) {
+  let s = totalMs;
+  const ms_in_second = 1000;
+  const sec_in_min = 60;
+  const min_in_hour = 60;
+  const hour_in_day = 24;
+  const day_in_week = 7;
+  const days_in_month = 30; // approximation
+  const days_in_year = 365; // approximation
+
+  const tahun = Math.floor(s / (ms_in_second * 60 * 60 * 24 * days_in_year));
+  s -= tahun * (ms_in_second * 60 * 60 * 24 * days_in_year);
+  const bulan = Math.floor(s / (ms_in_second * 60 * 60 * 24 * days_in_month));
+  s -= bulan * (ms_in_second * 60 * 60 * 24 * days_in_month);
+  const minggu = Math.floor(s / (ms_in_second * 60 * 60 * 24 * day_in_week));
+  s -= minggu * (ms_in_second * 60 * 60 * 24 * day_in_week);
+  const hari = Math.floor(s / (ms_in_second * 60 * 60 * 24));
+  s -= hari * (ms_in_second * 60 * 60 * 24);
+  const jam = Math.floor(s / (ms_in_second * 60 * 60));
+  s -= jam * (ms_in_second * 60 * 60);
+  const menit = Math.floor(s / (ms_in_second * 60));
+  s -= menit * (ms_in_second * 60);
+  const detik = Math.floor(s / ms_in_second);
+  s -= detik * ms_in_second;
+  const milidetik = s;
+
+  const langPack = bahasa[lang] || bahasa["en"];
+  const arr = [];
+  function label(unitKey, value, singularKey, pluralKey) {
+    if (lang === "id") {
+      return `${value} ${langPack[unitKey]}`;
+    } else {
+      const key = (value === 1) ? singularKey : pluralKey;
+      return `${value} ${langPack[key]}`.toUpperCase();
+    }
+  }
+
+  if (tahun) arr.push(label("unit_year", tahun, "unit_year_singular", "unit_year_plural"));
+  if (bulan) arr.push(label("unit_month", bulan, "unit_month_singular", "unit_month_plural"));
+  if (minggu) arr.push(label("unit_week", minggu, "unit_week_singular", "unit_week_plural"));
+  if (hari) arr.push(label("unit_day", hari, "unit_day_singular", "unit_day_plural"));
+  if (jam) arr.push(label("unit_hour", jam, "unit_hour_singular", "unit_hour_plural"));
+  if (menit) arr.push(label("unit_minute", menit, "unit_minute_singular", "unit_minute_plural"));
+  if (detik) {
+    if (lang === "id") arr.push(`${detik} ${langPack.unit_second}`);
+    else arr.push(`${detik} ${langPack.unit_second_singular}` + (detik === 1 ? "" : "S"));
+  }
+  if (milidetik) {
+    if (lang === "id") arr.push(`${milidetik} ${langPack.unit_ms}`);
+    else arr.push(`${milidetik} ${langPack.unit_ms_singular}` + (milidetik === 1 ? "" : "S"));
+  }
+
+  if (arr.length === 0) {
+    if (lang === "id") return `0 ${langPack.unit_second}`;
+    return `0 ${langPack.unit_second_plural}`;
+  }
+
+  return arr.join(", ");
+}
+
+/* ======= Keep old helper but not used for ms case (kept for backwards compatibility) ======= */
+function convertSecondsToUnits(totalSec) {
+  const sec = Math.floor(totalSec % 60);
+  const totalMin = Math.floor(totalSec / 60);
+  const min = totalMin % 60;
+  const totalHours = Math.floor(totalMin / 60);
+  const hours = totalHours % 24;
+  const totalDays = Math.floor(totalHours / 24);
+  const days = totalDays % 7;
+  const weeks = Math.floor(totalDays / 7) % 4;
+  const months = Math.floor(totalDays / 30) % 12;
+  const years = Math.floor(totalDays / 365);
+  return { years, months, weeks, days, hours, min, sec, totalHours: Math.floor(totalSec/3600) };
+}
+
+/* ======= Update selisih utama (now includes ms and bilingual) ======= */
+function updateSelisih() {
+  const lang = (localStorage.getItem("bahasaPref") === "auto") ? detectBahasa() : (localStorage.getItem("bahasaPref") || detectBahasa());
+  const pack = bahasa[lang] || bahasa["en"];
+  const sekarang = new Date();
+
+  // waktu awal
+  let waktuAwal;
+  if (modeWaktuAwalCheckbox.checked) {
+    const val = waktuAwalInput ? waktuAwalInput.value : "";
+    if (!val) { hasil.textContent = pack.masukkan_waktu_tujuan; return; }
+    const [jw, mw] = val.split(":");
+    waktuAwal = new Date(sekarang);
+    waktuAwal.setHours(parseInt(jw), parseInt(mw), 0, 0);
+    if (aktifkanTanggalCheckbox.checked) {
+      if (!tanggalAwalInput.value) { hasil.textContent = pack.masukkan_waktu_tujuan; return; }
+      const tAwal = new Date(tanggalAwalInput.value + "T00:00:00");
+      waktuAwal.setFullYear(tAwal.getFullYear(), tAwal.getMonth(), tAwal.getDate());
+    }
+  } else {
+    waktuAwal = new Date(sekarang);
+  }
+
+  // waktu tujuan
+  const valTujuan = waktuTujuan.value;
+  if (!valTujuan) { hasil.textContent = pack.masukkan_waktu_tujuan; return; }
+  let [jt, mt] = valTujuan.split(":");
+  jt = parseInt(jt); mt = parseInt(mt);
+  let waktuTujuanObj;
+  if (aktifkanTanggalCheckbox.checked) {
+    if (!tanggalTujuanInput.value) { hasil.textContent = pack.masukkan_waktu_tujuan; return; }
+    waktuTujuanObj = new Date(tanggalTujuanInput.value + "T00:00:00");
+    waktuTujuanObj.setHours(jt, mt, 0, 0);
+  } else {
+    waktuTujuanObj = new Date(waktuAwal);
+    waktuTujuanObj.setHours(jt, mt, 0, 0);
+    if (waktuTujuanObj.getTime() < waktuAwal.getTime() && gunakanHariBerikutnyaCheckbox.checked) {
+      waktuTujuanObj.setDate(waktuTujuanObj.getDate() + 1);
+    }
+  }
+
+  const selisihMs = waktuTujuanObj.getTime() - waktuAwal.getTime();
+  const totalMsAbs = Math.abs(selisihMs);
+
+  // base breakdown (hours/minutes/secs) for some modes
+  const totalDetikAbs = Math.floor(totalMsAbs / 1000);
+  const jamH = Math.floor(totalDetikAbs / 3600);
+  const menitH = Math.floor((totalDetikAbs % 3600) / 60);
+  const detik = totalDetikAbs % 60;
+
+  // If "gunakan satuan tinggi" active -> show optimized string including ms
+  if (gunakanSatuanTinggiCheckbox.checked) {
+    const formatted = formatFullUnits(totalMsAbs, lang);
+    hasil.textContent = (selisihMs >= 0 ? pack.menuju_label : pack.sudah_lewat) + " " + formatted;
+    // optionally show breakdown if perhitungan tunggal aktif
+    if (perhitunganTunggalCheckbox.checked) {
+      const conv = convertSecondsToUnits(totalDetikAbs);
+      hasil.innerHTML += `<div class="small" style="margin-top:8px;">${conv.years} th, ${conv.months} bln, ${conv.weeks} mg, ${conv.days} hr, ${conv.hours} jam, ${conv.min} mnt, ${conv.sec} dtk</div>`;
+    }
+    return;
+  }
+
+  // Non-satuan-tinggi behavior (preserve previous behaviors)
+  if (!perhitunganTunggalCheckbox.checked) {
+    if (pisahUnitCheckboxChecked()) {
+      hasil.innerHTML = `
+        ${selisihMs >= 0 ? pack.menuju_label : pack.sudah_lewat}<br/>
+        <strong>${jamH}</strong> jam<br/>
+        <strong>${menitH}</strong> menit<br/>
+        <strong>${detik}</strong> detik
+      `;
+    } else {
+      hasil.textContent = selisihMs >= 0
+        ? `${pack.menuju_label} ${jamH} jam ${menitH} menit ${detik} detik`
+        : `${pack.sudah_lewat} ${jamH} jam ${menitH} menit ${detik} detik`;
+    }
+    return;
+  }
+
+  // Perhitungan tunggal aktif -> show breakdown like before (kept mostly same)
+  const conv = convertSecondsToUnits(totalDetikAbs);
+  const unitCounts = [conv.years, conv.months, conv.weeks, conv.days, conv.hours, conv.min, conv.sec];
+  let header = selisihMs >= 0 ? pack.menuju_label : pack.sudah_lewat;
+
+  if (conv.totalHours > 0 && conv.min === 0 && conv.sec === 0 && conv.hours !== 0 && conv.days === 0 && conv.weeks === 0 && conv.months === 0 && conv.years === 0) {
+    const h = conv.totalHours;
+    const f = (h) => {
+      const det = h * 3600;
+      const menit = h * 60;
+      const minggu = h / (24*7);
+      const bulan = h / (24*30);
+      const tahun = h / (24*365);
+      return { det, menit, minggu, bulan, tahun };
+    };
+    const fRes = f(h);
+    hasil.innerHTML = `
+      ${header} <strong>${h} jam</strong>
+      <div class="small" style="margin-top:8px;">
+        ${pack.tunggu_label} <br/>
+        <strong>${Math.floor(fRes.det)}</strong> detik,<br/>
+        <strong>${Math.floor(fRes.menit)}</strong> menit,<br/>
+        <strong>${h}</strong> jam,<br/>
+        <strong>${(fRes.minggu).toFixed(5)}</strong> minggu,<br/>
+        <strong>${(fRes.bulan).toFixed(5)}</strong> bulan,<br/>
+        <strong>${(fRes.tahun).toFixed(5)}</strong> tahun
+      </div>
+    `;
+    return;
+  }
+
+  if (conv.totalHours === 0 && conv.min > 0 && conv.sec === 0 && conv.hours === 0) {
+    const m = conv.min + conv.hours*60;
+    const det = m * 60;
+    hasil.innerHTML = `
+      ${header} <strong>${m} menit</strong>
+      <div class="small" style="margin-top:8px;">
+        ${pack.tunggu_label} <br/>
+        <strong>${det}</strong> detik,<br/>
+        <strong>${m}</strong> menit
+      </div>
+    `;
+    return;
+  }
+
+  hasil.innerHTML = `${header} <strong>${jamH} jam ${menitH} menit ${detik} detik</strong>
+    <div class="small" style="margin-top:8px;">
+      ${conv.years} th, ${conv.months} bln, ${conv.weeks} mg, ${conv.days} hr, ${conv.hours} jam, ${conv.min} mnt, ${conv.sec} dtk
+    </div>
+  `;
+}
+
+/* small helper to check pisah unit saved checkbox (reuse) */
+function pisahUnitCheckboxChecked() {
+  const el = document.getElementById("pisahUnit");
+  return el && el.checked;
+}
+
+/* ======= Toggle inputs ======= */
+function toggleWaktuAwalInput() {
+  if (modeWaktuAwalCheckbox.checked) inputWaktuAwalContainer.style.display = "block";
+  else { inputWaktuAwalContainer.style.display = "none"; if (waktuAwalInput) waktuAwalInput.value = ""; }
+}
+function toggleTanggalInput() {
+  if (aktifkanTanggalCheckbox.checked) tanggalContainer.style.display = "block";
+  else { tanggalContainer.style.display = "none"; tanggalAwalInput.value = ""; tanggalTujuanInput.value = ""; }
+}
+
+/* ======= Pengaturan popup handlers ======= */
+function bukaPengaturan() { loadBahasaPrefToUI(); showPopup(popupPengaturan); }
+function tutupPengaturan() {
+  hidePopup(popupPengaturan);
+  simpanPreferensi();
+  applyTema();
+  toggleWaktuAwalInput();
+  toggleTanggalInput();
+  loadBahasaPrefToUI();
+  renderShortcut();
+  updateSelisih();
+}
+function resetPreferensi() {
+  localStorage.removeItem("tema");
+  localStorage.removeItem("modeWaktuAwal");
+  localStorage.removeItem("aktifkanTanggal");
+  localStorage.removeItem("perhitunganTunggal");
+  localStorage.removeItem("gunakanSatuanTinggi");
+  localStorage.removeItem("bahasaPref");
+  alert(bahasa[detectBahasa()].preferensi_reset || "Reset");
+  loadPreferensi();
+  renderShortcut();
+}
+
+/* ======= Event listeners ======= */
+waktuTujuan.addEventListener("input", updateSelisih);
+if (waktuAwalInput) waktuAwalInput.addEventListener("input", updateSelisih);
+tanggalAwalInput.addEventListener("change", updateSelisih);
+tanggalTujuanInput.addEventListener("change", updateSelisih);
+temaSelect.addEventListener("change", applyTema);
+modeWaktuAwalCheckbox.addEventListener("change", () => { toggleWaktuAwalInput(); updateSelisih(); });
+aktifkanTanggalCheckbox.addEventListener("change", () => { toggleTanggalInput(); updateSelisih(); });
+perhitunganTunggalCheckbox.addEventListener("change", updateSelisih);
+gunakanSatuanTinggiCheckbox.addEventListener("change", updateSelisih);
+pilihBahasa.addEventListener("change", () => {
+  localStorage.setItem("bahasaPref", pilihBahasa.value);
+  loadBahasaPrefToUI();
+});
+
+/* update setiap detik */
+setInterval(updateSelisih, 1000);
+
+/* load awal */
+loadPreferensi();
+renderShortcut();
+updateSelisih();
+loadBahasaPrefToUI();
+</script>
+</body>
+</html>
