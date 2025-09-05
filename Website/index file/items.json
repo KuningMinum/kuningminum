@@ -1,0 +1,32 @@
+[
+  {
+    "nama_id": "Selisih Waktu",
+    "nama_en": "Time Difference",
+    "link": "Website/WAKTU.html",
+    "icon": "fas fa-clock"
+  },
+  {
+    "nama_id": "HTML Editor",
+    "nama_en": "HTML Editor",
+    "link": "Website/HTML EDITOR.html",
+    "icon": "fas fa-code"
+  },
+  {
+    "nama_id": "Segera Hadir",
+    "nama_en": "Coming Soon",
+    "link": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    "icon": "coming-soon"
+  },
+  {
+    "nama_id": "Segera Hadir",
+    "nama_en": "Coming Soon",
+    "link": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    "icon": "coming-soon"
+  },
+  {
+    "nama_id": "Segera Hadir",
+    "nama_en": "Coming Soon",
+    "link": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    "icon": "coming-soon"
+  }
+]
