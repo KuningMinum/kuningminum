@@ -19,5 +19,12 @@
     "icon": "coming-soon",
     "link": "#",
     "tags": "???"
+  },
+  {
+    "nama_en": "Safe or bomb",
+    "nama_id": "Gosok Bom",
+    "icon": "fa-solid fa-bomb",
+    "link": "Website/Safe or bomb.html",
+    "tags": "Game"
   }
 ]
