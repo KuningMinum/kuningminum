@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Kartu Gosok Bom - Mode Pemain</title>
+<style>
+  :root{ --cell-size:56px; --gap:6px; --panel-width:320px; --accent:#ffcc00; }
+  *{box-sizing:border-box}
+  body{font-family:'Segoe UI',Tahoma,sans-serif;margin:0;padding:16px;background:linear-gradient(135deg,#eef2f7,#fff);color:#222;min-height:100vh;display:flex;flex-direction:column;align-items:center;}
+  .wrap{width:100%;max-width:1200px}
+  .container{display:flex;gap:12px;width:100%;align-items:flex-start;justify-content:center;}
+  main{flex:1;max-width:880px}
+  aside{width:var(--panel-width);min-width:220px}
+  h2{background:#0077cc;color:#fff;padding:10px 18px;border-radius:12px;margin:0 0 12px}
+  button,input,select{padding:8px 10px;border-radius:10px;border:1px solid #bbb;font-size:14px;cursor:pointer;background:#fff}
+  .topbar{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap}
+  .controls{display:flex;gap:10px;align-items:center}
+  #gridContainer{display:grid;gap:var(--gap);margin-top:6px;width:max-content}
+  .cell{width:var(--cell-size);height:var(--cell-size);background:#cfcfcf;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;user-select:none;box-shadow:inset 0 -2px 0 rgba(0,0,0,0.06);cursor:pointer;transition:transform .08s}
+  .cell:active{transform:scale(.98)}
+  .cell.revealed{opacity:0.98}
+  .status-message{margin-top:12px;font-weight:700;min-height:26px;text-align:center}
+  .player-line{display:flex;justify-content:space-between;padding:6px 4px;border-bottom:1px dashed #f0f0f0}
+  .player-line:last-child{border-bottom:0}
+  .sidebar-block{background:#fff;padding:10px;border-radius:10px;border:1px solid #eee;margin-bottom:10px}
+  .small{font-size:13px;color:#555}
+  /* overlay & popup */
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:none;z-index:900;align-items:center;justify-content:center}
+  .popup{background:#fff;border-radius:12px;padding:14px;width:420px;max-width:92%;box-shadow:0 12px 28px rgba(0,0,0,0.2);z-index:910}
+  .popup.scrollable{max-height:80vh;overflow:auto}
+  .popup.small{width:320px}
+  .popup h3{margin:0 0 8px}
+  .popup .rows{display:flex;flex-direction:column;gap:8px}
+  .popup .actions{display:flex;gap:8px;justify-content:flex-end;margin-top:10px}
+  .preview-grid{display:grid;gap:6px;justify-content:center;margin-top:8px}
+  .preview-cell{width:18px;height:18px;background:#ddd;border-radius:4px}
+  .rank-row{display:flex;justify-content:space-between;padding:6px 8px;border-bottom:1px dashed #efefef}
+  .rank-row:last-child{border-bottom:0}
+  .btn-ghost{background:transparent;border:1px solid #ddd}
+  label{display:flex;flex-direction:column;gap:6px}
+  .flex-row{display:flex;gap:8px;align-items:center}
+  .disabled-input{opacity:0.6}
+  .seed-input{font-weight:700;letter-spacing:2px;padding:8px 10px;font-size:14px}
+  .hint{font-size:12px;color:#666}
+  .bom-info{display:flex;gap:8px;align-items:center}
+  .bom-count-box{padding:6px 8px;border-radius:8px;border:1px solid #eee;background:#fafafa;font-weight:700}
+  footer{margin-top:18px;width:100%;max-width:1200px;display:flex;justify-content:center;padding:8px}
+  .creator{font-weight:700;color:var(--accent)}
+  a.creator{color:var(--accent);text-decoration:none}
+  @media(max-width:980px){ .container{flex-direction:column;align-items:center} aside{width:100%} main{max-width:100%} }
+  @media(max-width:420px){ :root{--cell-size:44px;--gap:4px} .popup{width:92%} }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <h2 id="titleText">Kartu Gosok Bom - Mode Pemain</h2>
+
+  <div class="container">
+    <main>
+      <div class="topbar">
+        <div class="controls">
+          <button id="openSettingsBtn">Mulai Game</button>
+          <div style="display:flex;flex-direction:column;">
+            <div class="small" id="playersInfoText">Pemain: 1</div>
+            <div class="small" id="botsInfoText">Bot: 0</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <div class="small" id="currentLangLabel">Bahasa: Indonesia</div>
+        </div>
+      </div>
+
+      <div class="status-message" id="statusPesan"></div>
+
+      <!-- Grid -->
+      <div id="gridContainer" aria-hidden="false"></div>
+
+    </main>
+
+    <aside>
+      <div class="sidebar-block">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <strong id="sidebarTitle">Stat Player & Bot</strong>
+        </div>
+        <div id="statPanel" style="margin-top:10px"></div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<!-- Overlay -->
+<div class="overlay" id="overlayRoot" role="dialog" aria-hidden="true">
+
+  <!-- Settings popup (scrollable) -->
+  <div class="popup scrollable" id="popupPengaturan" style="display:none;">
+    <h3 id="settingsTitle">Pengaturan Game</h3>
+    <div class="rows">
+
+      <label><span id="labelJumlahPlayer">Jumlah Pemain:</span>
+        <input type="number" id="jumlahPlayer" min="1" value="1" />
+      </label>
+
+      <label><span id="labelBotCount">Jumlah Bot:</span>
+        <input type="number" id="jumlahBot" min="0" value="0" />
+      </label>
+
+      <label>
+        <span id="labelSeed">Seed:</span>
+        <div class="flex-row" style="align-items:center;">
+          <input id="seedInput" class="seed-input" maxlength="6" placeholder="ABC123" />
+          <button id="acakSeedBtn" style="white-space:nowrap">Acak</button>
+
+          <!-- Real checkbox for random seed -->
+          <label style="display:flex;align-items:center;gap:8px;margin-left:8px;">
+            <input type="checkbox" id="acakSeedSetiapMulai" />
+            <span class="small" id="labelAlwaysRandom">Random</span>
+          </label>
+        </div>
+        <div class="hint">Seed 6 karakter: huruf/angka (besar otomatis).</div>
+      </label>
+
+      <div style="display:flex;gap:8px;align-items:center;">
+        <label style="flex:1">
+          <span id="labelGrid">Grid:</span>
+          <select id="gridSize">
+            <option value="3">3x3</option>
+            <option value="4">4x4</option>
+            <option value="5">5x5</option>
+            <option value="custom">Custom</option>
+          </select>
+        </label>
+        <button id="previewBtnInSettings" style="white-space:nowrap">Pratinjau</button>
+      </div>
+
+      <div id="customGridLabel" style="display:flex;gap:6px;">
+        <label style="flex:1">
+          <span id="labelCustomH">Custom H: <span class="hint">(Horizontal — kiri → kanan)</span></span>
+          <input type="number" id="customH" min="2" max="50" value="2" disabled />
+        </label>
+        <label style="flex:1">
+          <span id="labelCustomV">Custom V: <span class="hint">(Vertikal — atas → bawah)</span></span>
+          <input type="number" id="customV" min="2" max="50" value="4" disabled />
+        </label>
+      </div>
+
+      <label>
+        <span id="labelBomPercent">Persentase Bom (%):</span>
+        <div class="flex-row" style="align-items:center">
+          <input type="range" id="bomPercentage" min="0" max="100" value="20" style="flex:1">
+          <div class="bom-info">
+            <div class="bom-count-box" id="bomCountBox">Bom: 1</div>
+            <div class="bom-count-box" id="bomPercentBox">20%</div>
+          </div>
+        </div>
+      </label>
+
+      <label><span id="labelEmojiBom">Emoji Bom:</span> <input type="text" id="emojiBom" maxlength="2" value="💣"></label>
+      <label><span id="labelEmojiAman">Emoji Aman:</span> <input type="text" id="emojiAman" maxlength="2" value="✅"></label>
+
+      <label><span id="labelLanguage">Bahasa / Language:</span>
+        <select id="languageSelect">
+          <option value="id">Indonesia</option>
+          <option value="en">English</option>
+        </select>
+      </label>
+
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button id="mulaiBtn">Mulai</button>
+        <button id="resetBtn">Reset</button>
+      </div>
+
+      <hr>
+
+      <!-- Log area hidden by default, open via button -->
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <strong id="logTitle">Log / Riwayat</strong>
+          <button id="toggleLogBtn" class="btn-ghost">Buka Log</button>
+        </div>
+        <div id="logWrapper" style="margin-top:8px;max-height:200px;overflow:auto;border:1px solid #eee;padding:8px;border-radius:8px;background:#fafafa;display:none">
+          <div id="logContent"></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:8px;justify-content:flex-end">
+          <button id="clearLogBtn">Hapus Log</button>
+          <button id="closeSettingsBtn">Tutup</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Restart -->
+  <div class="popup small" id="popupRestart" style="display:none;">
+    <h3 id="restartTitle">Konfirmasi</h3>
+    <div id="restartMessage" style="color:#333;font-size:14px">Game sedang berlangsung. Mulai ulang?</div>
+    <div class="actions">
+      <button id="restartCancelBtn">Tidak</button>
+      <button id="restartConfirmBtn">Ya, Mulai Ulang</button>
+    </div>
+  </div>
+
+  <!-- Reset -->
+  <div class="popup small" id="popupReset" style="display:none;">
+    <h3 id="resetTitle">Konfirmasi Reset</h3>
+    <div id="resetMessage" style="color:#333;font-size:14px">⚠️ Peringatan! Anda akan mereset seluruh pengaturan ke default.</div>
+    <div class="actions">
+      <button id="resetCancelBtn">Batal</button>
+      <button id="resetConfirmBtn">Ya, Reset</button>
+    </div>
+  </div>
+
+  <!-- Preview -->
+  <div class="popup" id="popupPreview" style="display:none;">
+    <h3 id="previewTitle">Pratinjau Grid</h3>
+    <div id="previewContainer" class="preview-grid"></div>
+    <div class="actions">
+      <button id="previewCloseBtn">Tutup</button>
+    </div>
+  </div>
+
+  <!-- Stat -->
+  <div class="popup" id="popupStat" style="display:none;">
+    <h3 id="statTitle">Stat Player</h3>
+    <div id="statList" style="max-height:320px;overflow:auto;margin-top:8px"></div>
+    <div class="actions">
+      <button id="statCloseBtn">Tutup</button>
+      <button id="statRestartBtn">Mulai Ulang</button>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <div>pembuat web ini: <a class="creator" href="https://kuningminum.github.io/kuningminum/" target="_blank" rel="noopener noreferrer">kuning minum</a></div>
+</footer>
+
+<script>
+/* ===== STATE ===== */
+let emojiBom="💣", emojiAman="✅";
+let totalSel=0;
+let currentPlayer=1, maxPlayer=1, botCount=0;
+let bomSet = new Set();
+let gameBerjalan=false;
+let players = []; // {name,isBot,benar,salah}
+let logLines = [];
+const defaultConfig = { seed:'', gridSize:"3", customH:2, customV:4, bomPercentage:20, emojiBom:"💣", emojiAman:"✅", jumlahPlayer:1, jumlahBot:0, acakSeedSetiapMulai:false, language:"id" };
+
+/* i18n */
+const i18n = {
+  id:{ title:"Kartu Gosok Bom - Mode Pemain", startBtn:"Mulai Game", settingsTitle:"Pengaturan Game", jumlahPlayer:"Jumlah Pemain:", jumlahBot:"Jumlah Bot:", seed:"Seed:", randomSeed:"Acak", alwaysRandom:"Random", grid:"Grid:", customH:"Custom H:", customV:"Custom V:", bomPercent:"Persentase Bom (%):", bomText:(count,h,v,perc)=>`Bom: ${count} (${h}x${v}) - ${perc}%`, emojiBom:"Emoji Bom:", emojiAman:"Emoji Aman:", languageLabel:"Bahasa / Language:", previewBtn:"Pratinjau", mulai:"Mulai", reset:"Reset", playersInfo:(n)=>`Pemain: ${n}`, botsInfo:(n)=>`Bot: ${n}`, playerSafe:(p)=>`Pemain ${p} Aman! ✅`, playerBomb:(p)=>`Pemain ${p} Telah terkena bom 😞`, confirmRestart:"⚠️ Game sedang berlangsung. Mulai ulang?", close:"Tutup", deleteLog:"Hapus Log", openLog:"Buka Log" },
+  en:{ title:"Scratch Bomb Cards - Player Mode", startBtn:"Start Game", settingsTitle:"Game Settings", jumlahPlayer:"Number of Players:", jumlahBot:"Number of Bots:", seed:"Seed:", randomSeed:"Randomize", alwaysRandom:"Random", grid:"Grid:", customH:"Custom H:", customV:"Custom V:", bomPercent:"Bomb Percentage (%):", bomText:(count,h,v,perc)=>`Bombs: ${count} (${h}x${v}) - ${perc}%`, emojiBom:"Bomb Emoji:", emojiAman:"Safe Emoji:", languageLabel:"Bahasa / Language:", previewBtn:"Preview", mulai:"Start", reset:"Reset", playersInfo:(n)=>`Players: ${n}`, botsInfo:(n)=>`Bots: ${n}`, playerSafe:(p)=>`Player ${p} Safe! ✅`, playerBomb:(p)=>`Player ${p} hit a bomb 😞`, confirmRestart:"⚠️ Game is running. Restart?", close:"Close", deleteLog:"Clear Log", openLog:"Open Log" }
+};
+let currentLang = defaultConfig.language;
+
+/* ===== UI refs & events ===== */
+const overlayRoot = document.getElementById('overlayRoot');
+const popupPengaturan = document.getElementById('popupPengaturan');
+const popupRestart = document.getElementById('popupRestart');
+const popupReset = document.getElementById('popupReset');
+const popupPreview = document.getElementById('popupPreview');
+const popupStat = document.getElementById('popupStat');
+const seedInput = document.getElementById('seedInput');
+const gridContainer = document.getElementById('gridContainer');
+const statusPesan = document.getElementById('statusPesan');
+const statPanel = document.getElementById('statPanel');
+const logContent = document.getElementById('logContent');
+
+document.getElementById('openSettingsBtn').addEventListener('click', openSettings);
+document.getElementById('previewBtnInSettings').addEventListener('click', openPreviewFromSettings);
+document.getElementById('acakSeedBtn').addEventListener('click', ()=> generateRandomSeed());
+document.getElementById('languageSelect').addEventListener('change', (e)=> applyLanguage(e.target.value));
+document.getElementById('mulaiBtn').addEventListener('click', requestStartGameFromSettings);
+document.getElementById('clearLogBtn').addEventListener('click', ()=> { logLines=[]; refreshLog(); });
+document.getElementById('closeSettingsBtn').addEventListener('click', closeSettings);
+document.getElementById('restartCancelBtn').addEventListener('click', hideRestartPopup);
+document.getElementById('restartConfirmBtn').addEventListener('click', ()=> { hideRestartPopup(); startGame(true); });
+document.getElementById('resetBtn').addEventListener('click', ()=> { showResetPopup(); });
+document.getElementById('resetCancelBtn').addEventListener('click', hideResetPopup);
+document.getElementById('resetConfirmBtn').addEventListener('click', doResetConfirmed);
+document.getElementById('previewCloseBtn').addEventListener('click', ()=> { closePreview(); });
+document.getElementById('statCloseBtn').addEventListener('click', ()=> hideStatPopup());
+document.getElementById('statRestartBtn').addEventListener('click', ()=> { hideStatPopup(); startGame(true); });
+document.getElementById('toggleLogBtn').addEventListener('click', ()=> toggleLogArea());
+
+// grid & custom events: immediate enable H/V when selecting custom
+document.getElementById('gridSize').addEventListener('change', (e)=> {
+  onGridChange(e.target.value);
+});
+document.getElementById('customH').addEventListener('input', ()=> { updateJumlahBom(); });
+document.getElementById('customV').addEventListener('input', ()=> { updateJumlahBom(); });
+document.getElementById('bomPercentage').addEventListener('input', ()=> { updateJumlahBom(); updatePercentBox(); });
+
+// seed input: uppercase and enforce max6
+seedInput.addEventListener('input', (e)=> {
+  e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6);
+});
+
+/* init custom inputs state */
+function initCustomInputs(){
+  const gs = document.getElementById('gridSize').value;
+  const isCustom = gs === 'custom';
+  const customH = document.getElementById('customH');
+  const customV = document.getElementById('customV');
+  customH.disabled = !isCustom; customV.disabled = !isCustom;
+  customH.classList.toggle('disabled-input', !isCustom);
+  customV.classList.toggle('disabled-input', !isCustom);
+}
+
+/* called when grid dropdown changes */
+function onGridChange(value){
+  const isCustom = value === 'custom';
+  const customH = document.getElementById('customH');
+  const customV = document.getElementById('customV');
+  // enable immediately if custom; disable otherwise
+  customH.disabled = !isCustom;
+  customV.disabled = !isCustom;
+  customH.classList.toggle('disabled-input', !isCustom);
+  customV.classList.toggle('disabled-input', !isCustom);
+  // update bom display according to new grid selection (BUT DON'T change active game)
+  updateJumlahBom();
+}
+
+/* open/close settings */
+function openSettings(){
+  loadConfig();
+  overlayRoot.style.display='flex';
+  popupPengaturan.style.display='block';
+  popupRestart.style.display='none';
+  popupReset.style.display='none';
+  popupPreview.style.display='none';
+  popupStat.style.display='none';
+  document.getElementById('logWrapper').style.display = 'none';
+  document.getElementById('toggleLogBtn').textContent = i18n[currentLang].openLog;
+  initCustomInputs();
+  refreshLog();
+}
+function closeSettings(){ popupPengaturan.style.display='none'; overlayRoot.style.display='none'; }
+
+/* preview */
+function openPreviewFromSettings(){ updateJumlahBom(); openPreview(); }
+function openPreview(){
+  overlayRoot.style.display='flex'; popupPreview.style.display='block'; popupPengaturan.style.display='none';
+  const preview = document.getElementById('previewContainer'); preview.innerHTML='';
+  let h = parseInt(document.getElementById('customH').value), v = parseInt(document.getElementById('customV').value);
+  if(document.getElementById('gridSize').value !== 'custom'){ h = v = parseInt(document.getElementById('gridSize').value); }
+  preview.style.gridTemplateColumns = `repeat(${h}, 18px)`; preview.style.gridTemplateRows = `repeat(${v}, 18px)`;
+  for(let i=0;i<h*v;i++){ const c=document.createElement('div'); c.className='preview-cell'; preview.appendChild(c); }
+}
+function closePreview(){ popupPreview.style.display='none'; overlayRoot.style.display='none'; }
+
+/* log toggle */
+function toggleLogArea(){
+  const wrapper = document.getElementById('logWrapper');
+  const btn = document.getElementById('toggleLogBtn');
+  if(wrapper.style.display === 'none' || wrapper.style.display === ''){
+    wrapper.style.display = 'block';
+    btn.textContent = i18n[currentLang].close;
+    refreshLog();
+  } else {
+    wrapper.style.display = 'none';
+    btn.textContent = i18n[currentLang].openLog;
+  }
+}
+
+/* update jumlah bom & sync UI (ONLY in settings) */
+function updateJumlahBom(){
+  let h = parseInt(document.getElementById('customH').value);
+  let v = parseInt(document.getElementById('customV').value);
+  if(document.getElementById('gridSize').value !== 'custom'){ h = v = parseInt(document.getElementById('gridSize').value); }
+  const total = h * v; totalSel = total;
+  const perc = parseInt(document.getElementById('bomPercentage').value);
+  let bomCount = Math.floor(total * perc / 100);
+  if(perc === 100) bomCount = total;
+  if(perc === 0) bomCount = 0;
+  document.getElementById('bomCountBox').textContent = `Bom: ${bomCount}`;
+  document.getElementById('bomPercentBox').textContent = `${perc}%`;
+}
+/* update percent box quickly */
+function updatePercentBox(){ document.getElementById('bomPercentBox').textContent = `${document.getElementById('bomPercentage').value}%`; }
+
+/* save/load config */
+function simpanConfig(){
+  const cfg = {
+    seed: seedInput.value,
+    gridSize: document.getElementById('gridSize').value,
+    customH: document.getElementById('customH').value,
+    customV: document.getElementById('customV').value,
+    bomPercentage: document.getElementById('bomPercentage').value,
+    emojiBom, emojiAman,
+    jumlahPlayer: maxPlayer,
+    jumlahBot: botCount,
+    acakSeedSetiapMulai: document.getElementById('acakSeedSetiapMulai').checked,
+    language: currentLang
+  };
+  localStorage.setItem('gosokConfig', JSON.stringify(cfg));
+}
+
+function loadConfig(){
+  const cfg = JSON.parse(localStorage.getItem('gosokConfig'));
+  if(cfg){
+    seedInput.value = cfg.seed || '';
+    document.getElementById('gridSize').value = cfg.gridSize || '3';
+    document.getElementById('customH').value = cfg.customH || 2;
+    document.getElementById('customV').value = cfg.customV || 4;
+    document.getElementById('bomPercentage').value = cfg.bomPercentage || 20;
+    document.getElementById('emojiBom').value = cfg.emojiBom || '💣';
+    document.getElementById('emojiAman').value = cfg.emojiAman || '✅';
+    document.getElementById('jumlahPlayer').value = cfg.jumlahPlayer || 1;
+    document.getElementById('jumlahBot').value = cfg.jumlahBot || 0;
+    document.getElementById('acakSeedSetiapMulai').checked = cfg.acakSeedSetiapMulai || false;
+    emojiBom = cfg.emojiBom || '💣'; emojiAman = cfg.emojiAman || '✅';
+    maxPlayer = parseInt(cfg.jumlahPlayer) || 1;
+    botCount = parseInt(cfg.jumlahBot) || 0;
+    currentLang = cfg.language || 'id';
+    document.getElementById('languageSelect').value = currentLang;
+  } else {
+    seedInput.value = '';
+    document.getElementById('languageSelect').value = defaultConfig.language;
+  }
+  applyLanguage(currentLang);
+  initCustomInputs();
+  updateJumlahBom();
+}
+
+/* language */
+function applyLanguage(lang){
+  currentLang = lang;
+  document.getElementById('titleText').textContent = i18n[lang].title;
+  document.getElementById('openSettingsBtn').textContent = i18n[lang].startBtn;
+  document.getElementById('settingsTitle').textContent = i18n[lang].settingsTitle;
+  document.getElementById('labelJumlahPlayer').textContent = i18n[lang].jumlahPlayer;
+  document.getElementById('labelBotCount').textContent = i18n[lang].jumlahBot;
+  document.getElementById('labelSeed').textContent = i18n[lang].seed;
+  document.getElementById('acakSeedBtn').textContent = i18n[lang].randomSeed;
+  document.getElementById('labelAlwaysRandom').textContent = i18n[lang].alwaysRandom;
+  document.getElementById('labelGrid').textContent = i18n[lang].grid;
+  document.getElementById('labelCustomH').textContent = i18n[lang].customH;
+  document.getElementById('labelCustomV').textContent = i18n[lang].customV;
+  document.getElementById('labelBomPercent').textContent = i18n[lang].bomPercent;
+  document.getElementById('labelEmojiBom').textContent = i18n[lang].emojiBom;
+  document.getElementById('labelEmojiAman').textContent = i18n[lang].emojiAman;
+  document.getElementById('labelLanguage').textContent = i18n[lang].languageLabel;
+  document.getElementById('previewBtnInSettings').textContent = i18n[lang].previewBtn;
+  document.getElementById('mulaiBtn').textContent = i18n[lang].mulai;
+  document.getElementById('resetBtn').textContent = i18n[lang].reset;
+  document.getElementById('playersInfoText').textContent = i18n[lang].playersInfo?.(maxPlayer) || '';
+  document.getElementById('botsInfoText').textContent = i18n[lang].botsInfo?.(botCount) || '';
+  document.getElementById('currentLangLabel').textContent = `Bahasa: ${lang==='id'?'Indonesia':'English'}`;
+  document.getElementById('closeSettingsBtn').textContent = i18n[lang].close;
+  document.getElementById('previewCloseBtn').textContent = i18n[lang].close;
+  document.getElementById('statCloseBtn').textContent = i18n[lang].close;
+  document.getElementById('clearLogBtn').textContent = i18n[lang].deleteLog;
+  document.getElementById('toggleLogBtn').textContent = i18n[lang].openLog;
+}
+
+/* Start / Restart */
+function requestStartGameFromSettings(){
+  if(gameBerjalan){ showRestartPopup(); return; }
+  startGame();
+}
+function showRestartPopup(){ overlayRoot.style.display='flex'; popupRestart.style.display='block'; popupPengaturan.style.display='none'; }
+function hideRestartPopup(){ popupRestart.style.display='none'; overlayRoot.style.display='none'; }
+
+/* Reset */
+function showResetPopup(){ overlayRoot.style.display='flex'; popupReset.style.display='block'; popupPengaturan.style.display='none'; }
+function hideResetPopup(){ popupReset.style.display='none'; overlayRoot.style.display='none'; }
+function doResetConfirmed(){
+  hideResetPopup();
+  localStorage.removeItem('gosokConfig');
+  emojiBom = defaultConfig.emojiBom; emojiAman = defaultConfig.emojiAman;
+  maxPlayer = 1; botCount = 0; currentPlayer = 1;
+  document.getElementById('gridSize').value = defaultConfig.gridSize;
+  document.getElementById('customH').value = defaultConfig.customH;
+  document.getElementById('customV').value = defaultConfig.customV;
+  document.getElementById('bomPercentage').value = defaultConfig.bomPercentage;
+  document.getElementById('emojiBom').value = defaultConfig.emojiBom;
+  document.getElementById('emojiAman').value = defaultConfig.emojiAman;
+  document.getElementById('jumlahPlayer').value = 1;
+  document.getElementById('jumlahBot').value = 0;
+  document.getElementById('acakSeedSetiapMulai').checked = false;
+  players = [{name:'P1', isBot:false, benar:0, salah:0}];
+  gameBerjalan = false;
+  closeSettings();
+  startGame(false);
+}
+
+/* Grid & RNG */
+function startGame(forced=false){
+  if(document.getElementById('acakSeedSetiapMulai').checked) seedInput.value = generateRandomSeed();
+  emojiBom = document.getElementById('emojiBom').value || '💣';
+  emojiAman = document.getElementById('emojiAman').value || '✅';
+  maxPlayer = parseInt(document.getElementById('jumlahPlayer').value) || 1;
+  botCount = parseInt(document.getElementById('jumlahBot').value) || 0;
+  currentPlayer = 1;
+  players = [];
+  for(let i=0;i<maxPlayer;i++) players.push({name:`P${i+1}`, isBot:false, benar:0, salah:0});
+  for(let b=0;b<botCount;b++) players.push({name:`Bot${b+1}`, isBot:true, benar:0, salah:0});
+  logLines = [];
+  simpanConfig();
+  closeAllPopups();
+  buatGrid(); // rebuild grid & bomSet based on current settings
+  gameBerjalan = true;
+  document.getElementById('playersInfoText').textContent = i18n[currentLang].playersInfo?.(maxPlayer) || '';
+  document.getElementById('botsInfoText').textContent = i18n[currentLang].botsInfo?.(botCount) || '';
+  refreshStatPanel();
+}
+
+function closeAllPopups(){ popupPengaturan.style.display='none'; popupRestart.style.display='none'; popupReset.style.display='none'; popupPreview.style.display='none'; popupStat.style.display='none'; overlayRoot.style.display='none'; }
+
+function buatGrid(){
+  gridContainer.innerHTML='';
+  let h = parseInt(document.getElementById('customH').value), v = parseInt(document.getElementById('customV').value);
+  if(document.getElementById('gridSize').value !== 'custom'){ h = v = parseInt(document.getElementById('gridSize').value); }
+  h = Math.max(1, parseInt(h)); v = Math.max(1, parseInt(v));
+  const cellSize = getComputedStyle(document.documentElement).getPropertyValue('--cell-size') || '56px';
+  gridContainer.style.gridTemplateColumns = `repeat(${h}, ${cellSize.trim()})`;
+  totalSel = h * v;
+
+  const perc = parseInt(document.getElementById('bomPercentage').value);
+  let bomCount = Math.floor(totalSel * perc / 100);
+  if(perc === 100) bomCount = totalSel;
+  if(perc === 0) bomCount = 0;
+
+  bomSet.clear();
+  const rng = mulberry32(calculateSeed(seedInput.value || ''));
+  if(bomCount === totalSel){
+    for(let i=0;i<totalSel;i++) bomSet.add(i);
+  } else {
+    while(bomSet.size < bomCount){
+      bomSet.add(Math.floor(rng()*totalSel));
+    }
+  }
+
+  for(let i=0;i<totalSel;i++){
+    const div = document.createElement('div');
+    div.className = 'cell';
+    div.dataset.index = i;
+    div.addEventListener('click', ()=> playerAction(div, bomSet.has(i)));
+    div.addEventListener('touchstart', ()=> playerAction(div, bomSet.has(i)));
+    gridContainer.appendChild(div);
+  }
+
+  statusPesan.textContent='';
+  // updateJumlahBom(); // don't need here because settings have their own display; but harmless to call
+  refreshStatPanel();
+}
+
+/* player action */
+function playerAction(el, isBom){
+  if(el.classList.contains('revealed')) return;
+  const p = players[currentPlayer-1];
+  if(!p) return;
+  el.classList.add('revealed');
+  el.textContent = isBom ? emojiBom : emojiAman;
+  if(isBom) p.salah++; else p.benar++;
+  const pesan = isBom ? (currentLang==='id' ? `Pemain ${currentPlayer} terkena bom 😞` : `Player ${currentPlayer} hit a bomb 😞`) : (currentLang==='id' ? `Pemain ${currentPlayer} Aman! ✅` : `Player ${currentPlayer} Safe! ✅`);
+  addLog(p.name + ': ' + pesan);
+  statusPesan.textContent = pesan;
+  refreshStatPanel();
+
+  if(checkAllCellsRevealed()){
+    setTimeout(()=> showStatPopup(), 250);
+    return;
+  }
+
+  advanceTurnAndMaybeBot();
+}
+
+/* advance & bot */
+function advanceTurnAndMaybeBot(){
+  currentPlayer = (currentPlayer % players.length) + 1;
+  const next = players[currentPlayer-1];
+  if(next && next.isBot){
+    setTimeout(()=>{
+      const cells = Array.from(document.querySelectorAll('.cell')).filter(c=>!c.classList.contains('revealed'));
+      if(cells.length === 0){ if(checkAllCellsRevealed()) showStatPopup(); return; }
+      const choice = cells[Math.floor(Math.random()*cells.length)];
+      const idx = parseInt(choice.dataset.index);
+      playerAction(choice, bomSet.has(idx));
+    }, 600 + Math.random()*700);
+  }
+}
+
+/* check all revealed */
+function checkAllCellsRevealed(){
+  const total = document.querySelectorAll('.cell').length;
+  const revealed = document.querySelectorAll('.cell.revealed').length;
+  return total>0 && revealed>=total;
+}
+
+/* stat sidebar */
+function refreshStatPanel(){
+  statPanel.innerHTML = '';
+  for(let i=0;i<players.length;i++){
+    const p = players[i];
+    const row = document.createElement('div');
+    row.style.display='flex'; row.style.justifyContent='space-between'; row.style.padding='6px 0'; row.style.borderBottom='1px dashed #f0f0f0';
+    row.innerHTML = `<div>${p.name}${p.isBot? ' 🤖' : ''}</div><div>${p.benar} ✔︎ / ${p.salah} ✖︎</div>`;
+    statPanel.appendChild(row);
+  }
+}
+
+/* log helpers (only in settings) */
+function addLog(line){
+  const t = new Date().toLocaleTimeString();
+  logLines.unshift(`[${t}] ${line}`);
+  refreshLog();
+}
+function refreshLog(){
+  logContent.innerHTML = '';
+  logLines.slice(0,200).forEach(l => { const d = document.createElement('div'); d.textContent = l; d.style.fontSize='13px'; d.style.padding='2px 0'; logContent.appendChild(d); });
+}
+
+/* preview */
+function openPreviewFromSettings(){ updateJumlahBom(); openPreview(); }
+function openPreview(){ overlayRoot.style.display='flex'; popupPreview.style.display='block'; popupPengaturan.style.display='none';
+  const preview = document.getElementById('previewContainer'); preview.innerHTML='';
+  let h = parseInt(document.getElementById('customH').value), v = parseInt(document.getElementById('customV').value);
+  if(document.getElementById('gridSize').value !== 'custom'){ h = v = parseInt(document.getElementById('gridSize').value); }
+  preview.style.gridTemplateColumns = `repeat(${h}, 18px)`; preview.style.gridTemplateRows = `repeat(${v}, 18px)`;
+  for(let i=0;i<h*v;i++){ const c=document.createElement('div'); c.className='preview-cell'; preview.appendChild(c); }
+}
+function closePreview(){ popupPreview.style.display='none'; overlayRoot.style.display='none'; }
+
+/* stat modal */
+function showStatPopup(){
+  overlayRoot.style.display='flex';
+  popupStat.style.display='block';
+  popupPengaturan.style.display='none';
+  popupRestart.style.display='none';
+  popupPreview.style.display='none';
+  const arr = players.map(p => ({name:p.name, benar:p.benar, salah:p.salah, isBot:p.isBot}));
+  arr.sort((a,b)=> { if(b.benar!==a.benar) return b.benar-a.benar; return a.salah-b.salah; });
+  const list = document.getElementById('statList'); list.innerHTML='';
+  arr.forEach((p, idx) => {
+    const r = document.createElement('div'); r.className='rank-row';
+    r.innerHTML = `<div>#${idx+1} ${p.name}${p.isBot? ' 🤖':''}</div><div>${p.benar} ✅ • ${p.salah} ☠️</div>`;
+    list.appendChild(r);
+  });
+}
+function hideStatPopup(){ popupStat.style.display='none'; overlayRoot.style.display='none'; }
+
+/* RNG */
+function calculateSeed(str){ let hash=0; for(let i=0;i<str.length;i++) hash=str.charCodeAt(i) + ((hash<<5)-hash); return hash>>>0; }
+function mulberry32(a){ return function(){ let t = a += 0x6D2B79F5; t = Math.imul(t ^ t>>>15, t | 1); t ^= t + Math.imul(t ^ t>>>7, t | 61); return ((t ^ t>>>14)>>>0) / 4294967296; } }
+
+/* random seed generator (6 chars A-Z0-9) */
+function generateRandomSeed(){
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let out = '';
+  for(let i=0;i<6;i++) out += chars[Math.floor(Math.random()*chars.length)];
+  seedInput.value = out;
+  return out;
+}
+
+/* init */
+window.onload = ()=>{
+  loadConfig();
+  applyLanguage(currentLang);
+  initCustomInputs();
+  updateJumlahBom();
+  buatGrid();
+  refreshStatPanel();
+  document.addEventListener('keydown', (e)=>{ if(e.key==='Escape'){ closeAllPopups(); }});
+};
+</script>
+</body>
+</html>
