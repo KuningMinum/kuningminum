@@ -26,5 +26,12 @@
     "icon": "fa-solid fa-bomb",
     "link": "Website/Safe or bomb.html",
     "tags": "Game"
+  },
+  {
+    "nama_en": "IP ADDRESS MAKER",
+    "nama_id": "IP ADDRESS MAKER",
+    "icon": "fa-solid fa-network-wired",
+    "link": "Website/IP_MAKER.html",
+    "tags": "Tool"
   }
 ]
