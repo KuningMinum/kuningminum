@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>HD IP Generator</title>
+<style>
+:root{
+--bg: linear-gradient(to right, #ffffff, #f6f9fc);
+--page-text: #0b0b0b;
+--panel-bg: rgba(255,255,255,0.94);
+--muted: #6c757d;
+--accent: #00838f;
+--accent-2: #00acc1;
+--table-odd: #f7feff;
+--table-even: #eef9fb;
+--footer-bg: #006064;
+--btn-text: #fff;
+--shadow: 0 8px 28px rgba(2,6,23,0.08);
+--toast-bg: rgba(25,25,25,0.95);
+--kelas-a-bg: #e6f8f3;
+--kelas-b-bg: #e7f6ff;
+--kelas-c-bg: #fff6ea;
+--header-text: var(--page-text);
+}
+body.dark{
+--bg: linear-gradient(135deg,#071426,#0b1220);
+--page-text: #e6f7f7;
+--panel-bg: rgba(10,12,16,0.78);
+--muted: #9aa6b2;
+--accent: #00a89c;
+--accent-2: #1fb6b3;
+--table-odd: #263238;
+--table-even: #37474f;
+--footer-bg: #072a2a;
+--btn-text: #fff;
+--shadow: 0 10px 40px rgba(0,0,0,0.5);
+--toast-bg: rgba(250,250,250,0.06);
+--kelas-a-bg: #00796b;
+--kelas-b-bg: #0288d1;
+--kelas-c-bg: #f57c00;
+--header-text: #ffffff;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;font-family:Inter, "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial;}
+body{background:var(--bg);color:var(--page-text);padding:22px 16px 160px 16px;transition:background .35s,color .35s}
+header{max-width:1200px;margin:0 auto 14px auto;display:flex;justify-content:space-between;align-items:center;gap:12px}
+h1{margin:8px 0;font-size:20px;letter-spacing:0.2px}
+.controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.btn{background:var(--accent);color:var(--btn-text);border:none;padding:10px 14px;border-radius:10px;box-shadow:var(--shadow);cursor:pointer;font-weight:700;transition:transform .12s, background .12s}
+.btn:hover{transform:translateY(-3px);background:var(--accent-2)}
+.btn.secondary{background:transparent;color:var(--page-text);border:1px solid rgba(0,0,0,0.06);box-shadow:none}
+.btn.small{padding:6px 8px;border-radius:8px;font-size:13px;font-weight:700}
+.copyBtn{border-radius:8px;padding:6px 10px;border:none;cursor:pointer;font-weight:800;background:var(--accent);color:var(--btn-text);box-shadow:var(--shadow)}
+.copyBtn:hover{transform:translateY(-2px);background:var(--accent-2)}
+#toggleDarkBtn{position:fixed;top:12px;right:12px;z-index:1400;display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;font-weight:700;box-shadow:var(--shadow);border:none;cursor:pointer;background:var(--accent);color:var(--btn-text)}
+#toggleDarkBtn:hover{transform:translateY(-3px);background:var(--accent-2)}
+.card{max-width:1200px;margin:12px auto;padding:12px;border-radius:12px;background:var(--panel-bg);box-shadow:var(--shadow)}
+table{width:100%;border-collapse:collapse;border-radius:8px;overflow:hidden}
+thead th{text-align:center;padding:10px;font-size:14px;color:var(--header-text)}
+tbody td{padding:12px;text-align:center;font-weight:700;vertical-align:middle}
+.kelas-a thead th{background:var(--kelas-a-bg)}
+.kelas-b thead th{background:var(--kelas-b-bg)}
+.kelas-c thead th{background:var(--kelas-c-bg)}
+tbody tr:nth-child(odd){background:var(--table-odd)}
+tbody tr:nth-child(even){background:var(--table-even)}
+tbody tr:hover{transform:translateY(-1px);background:var(--accent-2);color:#fff;transition:background .12s}
+.cell-copy{display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap}
+.value-text{min-width:120px;text-align:center;word-break:break-word}
+footer{position:fixed;bottom:0;left:0;right:0;background:var(--footer-bg);color:#fff;display:flex;justify-content:center;gap:24px;padding:14px 8px;z-index:1200;box-shadow:0 -8px 26px rgba(0,0,0,0.12)}
+footer a{color:#bff3ff;text-decoration:none;font-weight:800}
+footer a:hover{text-decoration:underline}
+#toast{position:fixed;bottom:24px;right:24px;background:var(--toast-bg);color:var(--btn-text);border-radius:20px;padding:10px 16px;font-weight:800;opacity:0;pointer-events:none;transition:opacity .28s,transform .2s;z-index:1600;box-shadow:0 10px 30px rgba(0,0,0,0.18)}
+#toast.show{opacity:1;transform:translateY(-6px);pointer-events:auto}
+#historyPopup{position:fixed;bottom:80px;right:20px;width:min(520px,96%);max-height:60vh;overflow:auto;background:var(--panel-bg);color:var(--page-text);border-radius:12px;padding:18px;box-shadow:0 12px 40px rgba(0,0,0,0.28);z-index:1500;display:none}
+#historyPopup h3{margin-top:0}
+.history-section{margin-bottom:14px}
+.history-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.pager{display:inline-flex;gap:8px;align-items:center}
+.pager .pgBtn{padding:6px 10px;border-radius:8px;border:none;cursor:pointer;background:var(--accent);color:var(--btn-text);font-weight:800}
+.pager .pgBtn[disabled]{opacity:.45;cursor:not-allowed;transform:none;background:rgba(0,0,0,0.08);color:var(--page-text)}
+@media (max-width:720px){
+.value-text{min-width:90px;font-size:14px}
+.btn{padding:8px 10px;font-size:14px}
+#toggleDarkBtn{top:8px;right:8px;padding:8px 10px;font-size:13px}
+footer{font-size:14px;gap:12px;padding:10px 6px}
+}
+</style>
+</head>
+<body>
+<header>
+<div>
+<h1><a href="https://kuningminum.github.io/kuningminum/" target="_blank">IP Generator — Class A / B / C</a></h1>
+
+</div>
+<div class="controls">
+<button class="btn" onclick="generateAll()">Generate Now</button>
+<button class="btn secondary" onclick="toggleHistory()">History</button>
+</div>
+</header>
+<main>
+<section class="card">
+<table id="tabelA">
+<thead>
+<tr class="kelas-a"><th colspan="3">Class A</th></tr>
+<tr class="kelas-a"><th>IP</th><th>Mask</th><th>Gateway</th></tr>
+</thead>
+<tbody></tbody>
+</table>
+</section>
+<section class="card">
+<table id="tabelB">
+<thead>
+<tr class="kelas-b"><th colspan="3">Class B</th></tr>
+<tr class="kelas-b"><th>IP</th><th>Mask</th><th>Gateway</th></tr>
+</thead>
+<tbody></tbody>
+</table>
+</section>
+<section class="card">
+<table id="tabelC">
+<thead>
+<tr class="kelas-c"><th colspan="3">Class C</th></tr>
+<tr class="kelas-c"><th>IP</th><th>Mask</th><th>Gateway</th></tr>
+</thead>
+<tbody></tbody>
+</table>
+</section>
+</main>
+<div id="toast" role="status" aria-live="polite"></div>
+<div id="historyPopup" aria-hidden="true" role="dialog" aria-label="IP History">
+<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+<h3>IP History — per Class (max 15 per page)</h3>
+<div>
+<button class="btn small" onclick="clearHistory()">Clear History</button>
+<button class="btn small secondary" onclick="toggleHistory()">Close</button>
+</div>
+</div>
+<div class="history-section" id="historyA">
+<div class="history-head">
+<h4>Class A</h4>
+<div class="pager">
+<button class="pgBtn" id="prevA" onclick="changePage('A', -1)">&lt;</button>
+<div id="pageInfoA" style="font-weight:700;min-width:80px;text-align:center"></div>
+<button class="pgBtn" id="nextA" onclick="changePage('A', 1)">&gt;</button>
+</div>
+</div>
+<table><thead><tr><th>IP</th><th>Mask</th><th>Gateway</th><th>Date</th><th>Copy</th></tr></thead><tbody></tbody></table>
+</div>
+<div class="history-section" id="historyB">
+<div class="history-head">
+<h4>Class B</h4>
+<div class="pager">
+<button class="pgBtn" id="prevB" onclick="changePage('B', -1)">&lt;</button>
+<div id="pageInfoB" style="font-weight:700;min-width:80px;text-align:center"></div>
+<button class="pgBtn" id="nextB" onclick="changePage('B', 1)">&gt;</button>
+</div>
+</div>
+<table><thead><tr><th>IP</th><th>Mask</th><th>Gateway</th><th>Date</th><th>Copy</th></tr></thead><tbody></tbody></table>
+</div>
+<div class="history-section" id="historyC">
+<div class="history-head">
+<h4>Class C</h4>
+<div class="pager">
+<button class="pgBtn" id="prevC" onclick="changePage('C', -1)">&lt;</button>
+<div id="pageInfoC" style="font-weight:700;min-width:80px;text-align:center"></div>
+<button class="pgBtn" id="nextC" onclick="changePage('C', 1)">&gt;</button>
+</div>
+</div>
+<table><thead><tr><th>IP</th><th>Mask</th><th>Gateway</th><th>Date</th><th>Copy</th></tr></thead><tbody></tbody></table>
+</div>
+</div>
+<footer>
+<a href="https://kuningminum.github.io/kuningminum/" target="_blank" rel="noopener">Kuning minum Github</a>
+
+</footer>
+<button id="toggleDarkBtn" aria-pressed="false">Dark</button>
+<script>
+const STORAGE_KEY = "ipData_v2";
+const THEME_KEY = "ip_theme_v2";
+let historyData = [];
+const PAGE_SIZE = 15;
+const pages = { A:0, B:0, C:0 };
+function randomOctet(min,max){return Math.floor(Math.random()*(max-min+1))+min}
+function nowTs(){return Date.now()}
+function formatNumericDate(ts){const d=new Date(ts);return d.getDate()+"-"+(d.getMonth()+1)+"-"+d.getFullYear()}
+function generateIP(kelas){let ip,mask,gateway;if(kelas==='A'){ip=`${randomOctet(1,126)}.${randomOctet(0,255)}.${randomOctet(0,255)}.${randomOctet(0,255)}`;mask="255.0.0.0";gateway=ip.split('.')[0]+".1"}else if(kelas==='B'){ip=`${randomOctet(128,191)}.${randomOctet(0,255)}.${randomOctet(0,255)}.${randomOctet(0,255)}`;mask="255.255.0.0";gateway=ip.split('.').slice(0,2).join('.')+".1"}else{ip=`${randomOctet(192,223)}.${randomOctet(0,255)}.${randomOctet(0,255)}.${randomOctet(0,255)}`;mask="255.255.255.0";gateway=ip.split('.').slice(0,3).join('.')+".1"}return {ip,mask,gateway,ts:nowTs()}}
+function renderMainTables(){const tA=document.querySelector("#tabelA tbody");tA.innerHTML='';const tB=document.querySelector("#tabelB tbody");tB.innerHTML='';const tC=document.querySelector("#tabelC tbody");tC.innerHTML='';const groups={A:[],B:[],C:[]};historyData.forEach(d=>{if(groups[d.class])groups[d.class].push(d)});['A','B','C'].forEach(k=>{const list=groups[k].slice(-5).reverse();const tbody=k==='A'?tA:(k==='B'?tB:tC);if(list.length===0){tbody.innerHTML=`<tr><td colspan="3" style="opacity:.7;padding:12px">No records</td></tr>`;return}list.forEach(item=>{const tr=document.createElement('tr');tr.innerHTML=`<td><div class="cell-copy"><div class="value-text">${item.ip}</div><button class="copyBtn" onclick="copyText('${item.ip}')">Copy</button></div></td><td><div class="cell-copy"><div class="value-text">${item.mask}</div><button class="copyBtn" onclick="copyText('${item.mask}')">Copy</button></div></td><td><div class="cell-copy"><div class="value-text">${item.gateway}</div><button class="copyBtn" onclick="copyText('${item.gateway}')">Copy</button></div></td>`;tbody.appendChild(tr)})})}
+function generateAll(){['A','B','C'].forEach(k=>{for(let i=0;i<5;i++){const d=generateIP(k);d.class=k;historyData.push(d)}});if(historyData.length>5000)historyData.splice(0,historyData.length-5000);saveToLocal();renderMainTables();showToast("IP Generated!")}
+const toastEl=document.getElementById("toast");let toastTimer=null
+function showToast(msg){clearTimeout(toastTimer);toastEl.textContent=msg;toastEl.classList.add("show");toastTimer=setTimeout(()=>toastEl.classList.remove("show"),1800)}
+function copyText(text){if(!navigator.clipboard){const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');showToast("Copied: "+text)}catch{showToast("Copy failed")}ta.remove();return}navigator.clipboard.writeText(text).then(()=>showToast("Copied: "+text)).catch(()=>showToast("Copy failed"))}
+function saveToLocal(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(historyData))}catch(e){}}
+function loadFromLocal(){try{historyData=JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]");if(!Array.isArray(historyData))historyData=[]}catch(e){historyData=[]}renderMainTables();populateHistoryPopup()}
+function toggleHistory(){const pop=document.getElementById("historyPopup");if(pop.style.display==="block"){pop.style.display="none";pop.setAttribute("aria-hidden","true")}else{populateHistoryPopup();pop.style.display="block";pop.setAttribute("aria-hidden","false")}}
+function populateHistoryPopup(){const groups={A:[],B:[],C:[]};historyData.forEach(d=>groups[d.class]&&groups[d.class].push(d));['A','B','C'].forEach(k=>{const tbody=document.querySelector(`#history${k} table tbody`);tbody.innerHTML='';const items=groups[k].slice().reverse();const totalPages=Math.max(1,Math.ceil(items.length/PAGE_SIZE));if(pages[k]>=totalPages)pages[k]=totalPages-1;const start=pages[k]*PAGE_SIZE;const pageItems=items.slice(start,start+PAGE_SIZE);if(pageItems.length===0){tbody.innerHTML=`<tr><td colspan="5" style="text-align:center;opacity:.7;padding:12px">No records</td></tr>`}else{pageItems.forEach(it=>{const tr=document.createElement('tr');tr.innerHTML=`<td>${it.ip}</td><td>${it.mask}</td><td>${it.gateway}</td><td>${formatNumericDate(it.ts)}</td><td style="display:flex;gap:8px;justify-content:center"><button class="copyBtn small" onclick="copyText('${it.ip}')">Copy IP</button><button class="copyBtn small" onclick="copyText('${it.mask}')">Copy Mask</button><button class="copyBtn small" onclick="copyText('${it.gateway}')">Copy GW</button></td>`;tbody.appendChild(tr)})}const pageInfoEl=document.getElementById(`pageInfo${k}`);const prevBtn=document.getElementById(`prev${k}`);const nextBtn=document.getElementById(`next${k}`);const total=items.length;const pagesCount=Math.max(1,Math.ceil(total/PAGE_SIZE));pageInfoEl.textContent=`${pages[k]+1} / ${pagesCount}`;prevBtn.disabled=(pages[k]<=0);nextBtn.disabled=(pages[k]>=pagesCount-1)})}
+function changePage(kelas,dir){const groups={A:[],B:[],C:[]};historyData.forEach(d=>groups[d.class]&&groups[d.class].push(d));const items=groups[kelas].slice().reverse();const pagesCount=Math.max(1,Math.ceil(items.length/PAGE_SIZE));pages[kelas]=Math.min(Math.max(0,pages[kelas]+dir),pagesCount-1);populateHistoryPopup()}
+function clearHistory(){if(!confirm("Clear all history?"))return;historyData=[];saveToLocal();populateHistoryPopup();renderMainTables();showToast("History cleared")}
+const themeBtn=document.getElementById("toggleDarkBtn")
+function applyTheme(isDark){if(isDark)document.body.classList.add("dark");else document.body.classList.remove("dark");themeBtn.innerText=isDark?"Light":"Dark";themeBtn.setAttribute("aria-pressed",isDark?"true":"false");try{localStorage.setItem(THEME_KEY,isDark?"dark":"light")}catch(e){}populateHistoryPopup()}
+themeBtn.addEventListener("click",()=>{const isDark=!document.body.classList.contains("dark");applyTheme(isDark)})
+window.addEventListener("load",()=>{try{const saved=localStorage.getItem(THEME_KEY);if(saved==="dark")applyTheme(true);else applyTheme(false)}catch(e){applyTheme(false)}themeBtn.innerText=document.body.classList.contains("dark")?"Light":"Dark";loadFromLocal()})
+</script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+.
