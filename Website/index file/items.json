@@ -33,5 +33,12 @@
     "icon": "fa-solid fa-network-wired",
     "link": "Website/IP_MAKER.html",
     "tags": "Tool"
+  },
+  {
+    "nama_id": "Thumbnail Downloader",
+    "nama_en": "Thumbnail Downloader",
+    "link": "Website/THUMBNAIL_DOWNLOADER.html",
+    "icon": "fa-solid fa-image",
+    "tags": "Tool,YouTube"
   }
 ]
