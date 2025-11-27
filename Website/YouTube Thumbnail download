@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Thumbnail Grabber — Desktop UI</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+<style>
+  :root{
+    --taskbar-h:48px;
+    --primary:#0b74ff;
+    --muted:#666;
+    --bg: url('https://moewalls.com/wp-content/uploads/2021/12/windows-xp-thumb-728x410.jpg') center/cover fixed;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;font-family:Inter,system-ui,Arial,sans-serif;background:linear-gradient(180deg,#0f1724cc,#00000099), var(--bg);color:#111}
+  .app-wrap{padding:20px 20px calc(var(--taskbar-h)+30px);display:flex;justify-content:center}
+
+  /* utama card */
+  .card{width:560px;background:rgba(255,255,255,0.97);padding:16px;border-radius:10px;box-shadow:0 12px 40px rgba(0,0,0,.35)}
+  .row{display:flex;gap:8px;align-items:center}
+  .label{font-weight:700}
+  input[type="text"]{flex:1;padding:10px;border-radius:8px;border:1px solid #ddd}
+  button.btn{padding:9px 12px;border-radius:8px;border:none;background:#222;color:#fff;cursor:pointer;font-weight:700}
+
+  img.thumb{width:100%;display:none;border-radius:8px;margin-top:10px;border:1px solid #ddd}
+  .video-title{font-weight:700;margin-top:8px;display:none}
+
+  .msg{margin-top:10px;padding:8px;background:#f4f6fb;border-radius:8px;border:1px solid #e8eefc;display:none}
+
+  /* taskbar */
+  .taskbar{position:fixed;left:0;right:0;bottom:0;height:var(--taskbar-h);background:rgba(12,12,12,0.96);display:flex;align-items:center;padding:6px 10px;gap:8px;z-index:9999}
+  .task-left{display:flex;align-items:center;gap:6px}
+  .start-btn{background:transparent;border:none;color:#fff;padding:6px 10px;border-radius:6px;display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:700}
+  .task-center{flex:1}
+  .task-minimized{display:flex;gap:6px;align-items:center}
+  .task-minimized button{background:#fff;border-radius:6px;padding:6px 8px;border:1px solid #ddd;cursor:pointer}
+
+  /* start menu grid */
+  .start-menu{position:fixed;left:10px;bottom:calc(var(--taskbar-h)+14px);width:460px;background:#fff;border-radius:12px;padding:12px;box-shadow:0 18px 60px rgba(0,0,0,.45);display:none;z-index:10000}
+  .start-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+  .start-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+  .start-item{display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px;border-radius:8px;cursor:pointer}
+  .start-item i{font-size:20px}
+  .start-item span{font-size:12px;text-align:center}
+
+  /* windows */
+  .window-back{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.25);z-index:5000}
+  .window{
+    position:absolute; width:480px; min-width:220px; min-height:140px; background:#fff;border-radius:8px;box-shadow:0 12px 40px rgba(0,0,0,.35);overflow:hidden;display:flex;flex-direction:column;resize:both
+  }
+  .titlebar{background:linear-gradient(#eef4ff,#e0eaf8);padding:8px 10px;display:flex;align-items:center;justify-content:space-between;cursor:grab;user-select:none}
+  .title-left{display:flex;gap:8px;align-items:center}
+  .title-text{font-weight:700}
+  .title-controls{display:flex;gap:6px;align-items:center}
+  .title-controls button{border:none;background:transparent;padding:6px;border-radius:6px;cursor:pointer}
+  .win-body{padding:10px;overflow:auto;flex:1}
+
+  /* small confirm modal */
+  .modal-simple{display:none;position:fixed;inset:0;align-items:center;justify-content:center;background:rgba(0,0,0,0.45);z-index:12000}
+  .modal-card{background:#fff;padding:14px;border-radius:10px;min-width:320px}
+
+  /* responsive */
+  @media(max-width:520px){ .start-menu{left:6px;right:6px;width:auto} .start-grid{grid-template-columns:repeat(4,1fr)} .card{width:92%} }
+</style>
+</head>
+<body>
+
+<div class="app-wrap">
+  <div class="card" role="application" aria-label="Main">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div><strong>Pengambil Thumbnail YouTube</strong><div style="font-size:12px;color:#666">Auto-update title & thumbnail — riwayat lokal</div></div>
+      <div style="font-size:12px;color:#666" id="topClock">00:00</div>
+    </div>
+
+    <div style="margin-top:12px" class="row">
+      <label class="label" for="ytLink">Link YouTube</label>
+    </div>
+    <div style="margin-top:8px" class="row">
+      <input id="ytLink" type="text" placeholder="https://www.youtube.com/watch?v=..." value="https://www.youtube.com/watch?v=dQw4w9WgXcQ">
+      <button id="grabBtn" class="btn"><i class="fa fa-image"></i>&nbsp;Ambil</button>
+    </div>
+
+    <img id="thumb" class="thumb" alt="thumbnail preview">
+    <div id="videoTitle" class="video-title"></div>
+    <div id="infoMsg" class="msg"></div>
+    <div style="margin-top:10px;display:flex;gap:8px">
+      <button id="openDownloadBtn" class="btn" style="display:none"><i class="fa fa-download"></i>&nbsp;Download</button>
+    </div>
+    <div style="margin-top:12px;font-size:13px;color:#666">Creator: <a href="#" id="creatorLink">kuningminum</a></div>
+  </div>
+</div>
+
+<!-- Start menu -->
+<div class="start-menu" id="startMenu" role="menu" aria-hidden="true">
+  <div class="start-top">
+    <div><strong id="startTitle">Start</strong> <small id="startSub" style="color:#666">Aplikasi</small></div>
+    <div id="startDate" style="font-size:13px;color:#666">00:00 • 1970-01-01</div>
+  </div>
+  <div class="start-grid" id="startGrid">
+    <div class="start-item" data-action="history"><i class="fa fa-history"></i><span>Riwayat</span></div>
+    <div class="start-item" data-action="download"><i class="fa fa-download"></i><span>Download</span></div>
+    <div class="start-item" data-action="export"><i class="fa fa-file-export"></i><span>Export TXT</span></div>
+    <div class="start-item" data-action="creator"><i class="fa fa-book"></i><span>Creator</span></div>
+    <div class="start-item" data-action="shutdown"><i class="fa fa-power-off"></i><span>Shutdown</span></div>
+    <div class="start-item" data-action="language"><i class="fa fa-language"></i><span>Bahasa</span></div>
+  </div>
+  <div style="margin-top:10px;display:flex;justify-content:flex-end">
+    <button id="startExportBtn" class="btn"><i class="fa fa-file-export"></i>&nbsp;Export</button>
+  </div>
+</div>
+
+<!-- area where minimized icons appear (left of taskbar) -->
+<div class="taskbar" id="taskbar">
+  <div class="task-left">
+    <button id="startBtn" class="start-btn" title="Start"><i class="fa fa-book" style="font-size:18px"></i> Start</button>
+    <div id="minimizedArea" class="task-minimized"></div>
+  </div>
+  <div class="task-center"></div>
+  <div style="color:#ddd;font-weight:700" id="taskClock">00:00</div>
+</div>
+
+<!-- modal simple -->
+<div class="modal-simple" id="simpleModal"><div class="modal-card"><div id="modalTitle" style="font-weight:700;margin-bottom:6px"></div><div id="modalBody" style="color:#333;margin-bottom:12px"></div><div style="text-align:right"><button id="modalOk" class="btn">OK</button> <button id="modalCancel" class="btn" style="background:#ddd">Cancel</button></div></div></div>
+
+<!-- container for windows created dynamically -->
+<div id="windowsRoot"></div>
+
+<script>
+/* ========== CONFIG ========== */
+const CREATOR_URL = 'https://kuningminum.github.io/kuningminum/'; // ubah di sini jika perlu
+
+/* ========== STATE ========== */
+let zIndexCounter = 2000;
+let windowCount = 0;
+const historyKey = 'yt_grabber_history_v2';
+let historyData = loadHistory();
+let lang = (navigator.language||'id').startsWith('en') ? 'en' : 'id';
+
+/* ========== REFS ========== */
+const startBtn = document.getElementById('startBtn');
+const startMenu = document.getElementById('startMenu');
+const startGrid = document.getElementById('startGrid');
+const startDate = document.getElementById('startDate');
+const taskClock = document.getElementById('taskClock');
+const topClock = document.getElementById('topClock');
+const ytLink = document.getElementById('ytLink');
+const grabBtn = document.getElementById('grabBtn');
+const thumb = document.getElementById('thumb');
+const videoTitle = document.getElementById('videoTitle');
+const infoMsg = document.getElementById('infoMsg');
+const openDownloadBtn = document.getElementById('openDownloadBtn');
+const windowsRoot = document.getElementById('windowsRoot');
+const minimizedArea = document.getElementById('minimizedArea');
+const creatorLink = document.getElementById('creatorLink');
+
+const simpleModal = document.getElementById('simpleModal');
+const modalTitle = document.getElementById('modalTitle');
+const modalBody = document.getElementById('modalBody');
+const modalOk = document.getElementById('modalOk');
+const modalCancel = document.getElementById('modalCancel');
+
+/* ========== UTILITS ========== */
+function loadHistory(){ try{ const raw = localStorage.getItem(historyKey); return raw ? JSON.parse(raw) : []; } catch(e){ return []; } }
+function saveHistory(){ try{ localStorage.setItem(historyKey, JSON.stringify(historyData)); } catch(e){} }
+function pushHistory(entry){ historyData.unshift(Object.assign({ts:new Date().toISOString()}, entry)); saveHistory(); }
+function sanitizeFilename(s){ return (s||'thumbnail').replace(/[^a-z0-9_\- ]/ig,'').trim().slice(0,120) || 'thumbnail'; }
+function formatDateISO(d){ const dt = new Date(d); return dt.toLocaleString(); }
+function showInfo(msg, t=2500){ infoMsg.style.display='block'; infoMsg.textContent = msg; clearTimeout(infoMsg._t); infoMsg._t = setTimeout(()=> infoMsg.style.display='none', t); }
+
+/* ========== CLOCK ========== */
+function tickClock(){
+  const d = new Date();
+  const hh = String(d.getHours()).padStart(2,'0'), mm = String(d.getMinutes()).padStart(2,'0');
+  taskClock.textContent = `${hh}:${mm}`;
+  topClock.textContent = `${hh}:${mm}`;
+  const yyyy = d.getFullYear(), mo = String(d.getMonth()+1).padStart(2,'0'), dd = String(d.getDate()).padStart(2,'0');
+  startDate.textContent = `${hh}:${mm} • ${yyyy}-${mo}-${dd}`;
+}
+setInterval(tickClock,1000); tickClock();
+
+/* ========== START MENU ========== */
+// toggle easier: click button or press Meta (Win) key
+startBtn.addEventListener('click', e => { startMenu.style.display = startMenu.style.display === 'block' ? 'none' : 'block'; });
+window.addEventListener('keydown', e => { if(e.key === 'Meta' || e.key === 'Win') { startMenu.style.display='block'; } });
+window.addEventListener('keyup', e => { if(e.key === 'Meta' || e.key === 'Win') { /* leave open until click away */ } });
+// click outside closes
+document.addEventListener('click', e => {
+  if(!startMenu.contains(e.target) && e.target !== startBtn) startMenu.style.display = 'none';
+});
+
+/* start grid actions (delegate) */
+startGrid.addEventListener('click', e => {
+  const item = e.target.closest('.start-item');
+  if(!item) return;
+  const act = item.dataset.action;
+  startMenu.style.display = 'none';
+  if(act === 'history') openHistoryWindow();
+  else if(act === 'download') openDownloadWindow();
+  else if(act === 'export') openExportWindow();
+  else if(act === 'creator') openCreatorWindowPopup();
+  else if(act === 'shutdown') { window.location.href = CREATOR_URL; } // ganti halaman ke creator sesuai permintaan
+  else if(act === 'language') { toggleLang(); }
+});
+
+/* smaller export button */
+document.getElementById('startExportBtn').addEventListener('click', ()=> { startMenu.style.display='none'; openExportWindow(); });
+
+/* ========== GRAB THUMBNAIL ========== */
+grabBtn.addEventListener('click', ()=> tryAutoFetch(true));
+ytLink.addEventListener('input', debounce(()=> tryAutoFetch(false), 650));
+
+let currentVid = '';
+let currentTitle = '';
+
+async function tryAutoFetch(manual=false){
+  const url = ytLink.value.trim();
+  if(!url){ if(manual) showModal('Error','Masukkan link terlebih dahulu'); return; }
+  let vid = null;
+  try{
+    const u = new URL(url);
+    if(u.hostname.includes('youtube.com')) vid = u.searchParams.get('v');
+    else if(u.hostname.includes('youtu.be')) vid = u.pathname.slice(1);
+  }catch(e){
+    if(manual) showModal('Error','Link tidak valid');
+    pushHistory({action:'fetch_attempt',link:url,status:'invalid'});
+    return;
+  }
+  if(!vid){ if(manual) showModal('Error','ID video tidak ditemukan'); pushHistory({action:'fetch_attempt',link:url,status:'noid'}); return; }
+  currentVid = vid;
+  await fetchThumbPreview(vid);
+  pushHistory({action:'fetch_preview',link:url,status:'ok'});
+}
+
+async function fetchThumbPreview(vid){
+  const urls = [`https://img.youtube.com/vi/${vid}/maxresdefault.jpg`,`https://img.youtube.com/vi/${vid}/hqdefault.jpg`,`https://img.youtube.com/vi/${vid}/sddefault.jpg`];
+  let ok=false;
+  for(const u of urls){
+    try{
+      const res = await fetch(u,{mode:'cors'}); if(!res.ok) continue;
+      const blob = await res.blob(); const obj = URL.createObjectURL(blob);
+      thumb.src = obj; thumb.style.display='block';
+      // try to get title via oEmbed
+      try{ const r = await fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${vid}&format=json`); if(r.ok){ const d = await r.json(); currentTitle = d.title; } }catch(e){}
+      if(!currentTitle) currentTitle = `video_${vid}`;
+      videoTitle.textContent = currentTitle; videoTitle.style.display='block';
+      openDownloadBtn.style.display='inline-block';
+      showInfo(`Preview loaded (${u.split('/').pop()})`);
+      ok=true; break;
+    }catch(e){ continue; }
+  }
+  if(!ok){ showModal('Error','Gagal mengambil thumbnail'); pushHistory({action:'fetch_preview',link:ytLink.value,status:'failed'}); }
+}
+
+/* ========== WINDOW / POPUP FACTORY ========== */
+
+function createWindow(opts){
+  // opts: id (optional), title, innerHTML (string), width,height,left,top, onReady(windowEl,bodyEl)
+  windowCount++;
+  const id = opts.id || `win_${Date.now()}_${Math.floor(Math.random()*9999)}`;
+  const back = document.createElement('div'); back.className='window-back'; back.style.display='flex';
+  const win = document.createElement('div'); win.className='window'; win.id = id;
+  win.style.left = (opts.left || (100 + windowCount*20)) + 'px';
+  win.style.top = (opts.top || (80 + windowCount*18)) + 'px';
+  if(opts.width) win.style.width = opts.width + 'px';
+  if(opts.height) win.style.height = opts.height + 'px';
+  win.style.zIndex = ++zIndexCounter;
+  // titlebar
+  const titlebar = document.createElement('div'); titlebar.className='titlebar'; titlebar.innerHTML = `
+    <div class="title-left"><strong class="title-text">${escapeHtml(opts.title||'Window')}</strong></div>
+    <div class="title-controls">
+      <button data-action="min" title="Minimize"><i class="fa fa-window-minimize"></i></button>
+      <button data-action="max" title="Maximize"><i class="fa fa-square"></i></button>
+      <button data-action="close" title="Close"><i class="fa fa-times"></i></button>
+    </div>`;
+  const body = document.createElement('div'); body.className='win-body';
+  body.innerHTML = opts.innerHTML || '';
+  win.appendChild(titlebar); win.appendChild(body);
+  back.appendChild(win);
+  windowsRoot.appendChild(back);
+
+  // controls
+  const btnMin = titlebar.querySelector('[data-action="min"]');
+  const btnMax = titlebar.querySelector('[data-action="max"]');
+  const btnClose = titlebar.querySelector('[data-action="close"]');
+  btnMin.addEventListener('click', ()=> minimizeWindow(back,win));
+  btnClose.addEventListener('click', ()=> closeWindow(back,win));
+  btnMax.addEventListener('click', ()=> toggleMaximize(win));
+
+  // drag
+  makeDraggable(titlebar, win);
+
+  // add to taskbar (icon)
+  addTaskbarApp(opts.title || 'App', win.id);
+
+  // make iframe open button handling if present (delegate)
+  body.querySelectorAll('iframe').forEach(fr=>{
+    // add "Open Original" button at top if not present
+    const wrapper = document.createElement('div'); wrapper.style.display='flex'; wrapper.style.justifyContent='flex-end'; wrapper.style.gap='6px'; wrapper.style.marginBottom='6px';
+    const openBtn = document.createElement('button'); openBtn.className='btn'; openBtn.style.padding='6px 8px'; openBtn.innerHTML = 'Buka link asli';
+    openBtn.addEventListener('click', ()=> { window.open(fr.src,'_blank'); });
+    wrapper.appendChild(openBtn);
+    body.insertBefore(wrapper, body.firstChild);
+  });
+
+  // onReady callback
+  if(typeof opts.onReady === 'function') opts.onReady(win, body);
+
+  return {back,win};
+}
+
+function closeWindow(back,win){
+  try{ // remove any minimized button
+    const mini = document.getElementById('mini_'+win.id); if(mini) mini.remove();
+    windowsRoot.removeChild(back);
+  }catch(e){}
+}
+
+function minimizeWindow(back, win){
+  back.style.display = 'none';
+  // create mini icon in minimizedArea
+  if(document.getElementById('mini_'+win.id)) return;
+  const btn = document.createElement('button'); btn.id = 'mini_'+win.id; btn.className='task-btn'; btn.style.padding='6px 8px'; btn.style.borderRadius='6px'; btn.style.background='#fff'; btn.style.border='1px solid #ddd'; btn.style.marginRight='6px';
+  btn.innerHTML = `<i class="fa fa-window-maximize"></i> <span style="margin-left:6px">${escapeHtml(win.querySelector('.title-text').textContent)}</span>`;
+  btn.addEventListener('click', ()=> { back.style.display='flex'; bringToFront(win); try{ btn.remove(); }catch(e){} });
+  minimizedArea.appendChild(btn);
+}
+
+function toggleMaximize(win){
+  const isMax = win.dataset.max === '1';
+  if(!isMax){
+    win.dataset.prev = JSON.stringify({left:win.style.left,top:win.style.top,width:win.style.width,height:win.style.height});
+    win.style.left = '8px'; win.style.top = '8px';
+    win.style.width = (window.innerWidth - 16) + 'px';
+    win.style.height = (window.innerHeight - 16) + 'px';
+    win.dataset.max = '1';
+  } else {
+    const prev = JSON.parse(win.dataset.prev || '{}');
+    win.style.left = prev.left || win.style.left;
+    win.style.top = prev.top || win.style.top;
+    win.style.width = prev.width || win.style.width;
+    win.style.height = prev.height || win.style.height;
+    win.dataset.max = '0';
+  }
+  bringToFront(win);
+}
+
+function bringToFront(win){
+  win.style.zIndex = ++zIndexCounter;
+  if(win.closest('.window-back')) win.closest('.window-back').style.zIndex = zIndexCounter - 1;
+}
+
+/* draggable for windows */
+function makeDraggable(titlebar, win){
+  let dragging=false, ox=0, oy=0;
+  titlebar.addEventListener('pointerdown', e => {
+    if(e.target.closest('button')) return;
+    dragging = true;
+    titlebar.style.cursor='grabbing';
+    const rect = win.getBoundingClientRect();
+    ox = e.clientX - rect.left; oy = e.clientY - rect.top;
+    bringToFront(win);
+  });
+  window.addEventListener('pointermove', e => {
+    if(!dragging) return;
+    let nx = e.clientX - ox, ny = e.clientY - oy;
+    const vw = document.documentElement.clientWidth, vh = document.documentElement.clientHeight;
+    nx = Math.max(8, Math.min(nx, vw - win.offsetWidth - 8));
+    ny = Math.max(8, Math.min(ny, vh - win.offsetHeight - 8));
+    win.style.left = nx + 'px'; win.style.top = ny + 'px';
+  });
+  window.addEventListener('pointerup', e => { if(dragging){ dragging=false; titlebar.style.cursor='grab'; } });
+}
+
+/* add icon/button to taskbar when app opened */
+function addTaskbarApp(title, winId){
+  // if already present, do nothing
+  if(document.getElementById('task_'+winId)) return;
+  const btn = document.createElement('button'); btn.id = 'task_'+winId;
+  btn.style.padding='6px 8px'; btn.style.borderRadius='6px'; btn.style.background='transparent'; btn.style.border='none'; btn.style.color='#fff'; btn.style.display='flex'; btn.style.alignItems='center'; btn.style.gap='8px';
+  btn.innerHTML = `<i class="fa fa-window-restore" style="color:#fff"></i><span style="font-weight:700">${escapeHtml(title)}</span>`;
+  // place after start button (minimized area is inside start-left), here simply append to taskbar center area
+  document.querySelector('.task-center').appendChild(btn);
+  // click toggles window visibility
+  btn.addEventListener('click', ()=> {
+    const win = document.getElementById(winId);
+    if(!win) { btn.remove(); return; }
+    const back = win.closest('.window-back');
+    if(back.style.display === 'flex') { minimizeWindow(back,win); } else { back.style.display = 'flex'; bringToFront(win); }
+  });
+}
+
+/* ========== SPECIFIC WINDOWS (History / Download / Export / Creator) ========== */
+
+function openHistoryWindow(){
+  const inner = `<div style="font-size:13px;color:#666;margin-bottom:8px">Riwayat kunjungan & aktivitas (tidak bisa dihapus via UI)</div>
+  <div id="histList" style="max-height:360px;overflow:auto;border:1px solid #f0f0f0;padding:6px;border-radius:8px;background:#fafafa"></div>
+  <div style="display:flex;gap:6px;justify-content:center;margin-top:8px"><button id="histPrev" class="btn" style="background:#eee">‹</button><span id="histPager" style="min-width:140px;text-align:center;color:#666"></span><button id="histNext" class="btn" style="background:#eee">›</button></div>`;
+  const win = createWindow({title:'Riwayat', innerHTML:inner, width:640, height:420, onReady:(w,body)=> {
+    renderHistInBody(body);
+  }});
+}
+
+function renderHistInBody(body){
+  const list = body.querySelector('#histList');
+  const pager = body.querySelector('#histPager');
+  const prev = body.querySelector('#histPrev');
+  const next = body.querySelector('#histNext');
+  let page = 1, pageSize = 10;
+  function render(){
+    const total = historyData.length;
+    const max = Math.max(1, Math.ceil(total / pageSize));
+    if(page>max) page = max;
+    const start = (page-1)*pageSize;
+    const items = historyData.slice(start, start+pageSize);
+    if(items.length===0) list.innerHTML = `<div style="padding:12px;color:#666">Belum ada riwayat.</div>`;
+    else {
+      list.innerHTML = '';
+      items.forEach(it=>{
+        const row = document.createElement('div'); row.style.padding='8px'; row.style.borderBottom='1px solid #f3f3f3';
+        row.innerHTML = `<div style="font-weight:700">${escapeHtml(it.action)}</div><div style="color:#666;font-size:12px">${formatDateISO(it.ts)} ${it.link? ' — '+escapeHtml(it.link):''}</div>`;
+        list.appendChild(row);
+      });
+    }
+    pager.textContent = `Page ${page} / ${max} — ${historyData.length} item`;
+  }
+  prev.addEventListener('click', ()=> { if(page>1){ page--; render(); }});
+  next.addEventListener('click', ()=> { const max = Math.max(1, Math.ceil(historyData.length / pageSize)); if(page<max){ page++; render(); }});
+  render();
+}
+
+function openDownloadWindow(){
+  const inner = `<div style="display:flex;gap:8px"><input id="dlName" placeholder="Nama file..." style="flex:1;padding:8px;border:1px solid #ddd;border-radius:6px"></div>
+  <div style="margin-top:8px"><select id="dlSize" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px"><option value="sd">SD (sddefault)</option><option value="hd">HD (maxres)</option><option value="ultra">Ultra 4K (premium)</option></select></div>
+  <div style="margin-top:10px;display:flex;gap:8px;justify-content:flex-end"><button id="dlCancel" class="btn" style="background:#ddd">Batal</button><button id="dlStart" class="btn" style="background:var(--primary)">Download</button></div>
+  <div style="margin-top:8px;color:#666;font-size:13px">Jika memilih Ultra 4K, akan membuka halaman premium.</div>`;
+  const {back,win} = createWindow({title:'Download Thumbnail', innerHTML:inner, width:480, height:220, onReady:(w,body)=>{
+    const nameIn = body.querySelector('#dlName');
+    const sizeSel = body.querySelector('#dlSize');
+    const dlCancel = body.querySelector('#dlCancel');
+    const dlStart = body.querySelector('#dlStart');
+    nameIn.value = sanitizeFilename(currentTitle || `thumb_${currentVid}`);
+    dlCancel.addEventListener('click', ()=> closeWindow(back,win));
+    dlStart.addEventListener('click', async ()=> {
+      const name = nameIn.value.trim() || sanitizeFilename(currentTitle||`thumb_${currentVid}`);
+      const size = sizeSel.value;
+      if(size === 'ultra'){ // premium flow: open creator page in new tab (could be adapted)
+        window.open(CREATOR_URL,'_blank');
+        pushHistory({action:'premium_click',link:ytLink.value,status:'opened_premium'});
+        return;
+      }
+      // download logic (single function, no duplicates)
+      try{
+        if(!currentVid) { showModal('Error','Tidak ada video untuk di-download'); return; }
+        const url = size === 'sd' ? `https://img.youtube.com/vi/${currentVid}/sddefault.jpg` : `https://img.youtube.com/vi/${currentVid}/maxresdefault.jpg`;
+        const res = await fetch(url);
+        if(!res.ok) throw new Error('no_blob');
+        const blob = await res.blob();
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${sanitizeFilename(name)}_${size}.png`;
+        document.body.appendChild(a); a.click(); a.remove();
+        showInfo('Download berhasil');
+        pushHistory({action:'download',link:ytLink.value,filename:`${sanitizeFilename(name)}_${size}.png`,size,status:'success'});
+        closeWindow(back,win);
+      }catch(err){
+        showModal('Error','Gagal download. Coba kualitas lain.');
+        pushHistory({action:'download',link:ytLink.value,filename:name,size,status:'failed'});
+      }
+    });
+  }});
+}
+
+function openExportWindow(){
+  const inner = `<div style="font-size:13px;color:#666;margin-bottom:8px">Ekspor riwayat ke file .txt (riwayat disimpan di localStorage)</div>
+  <div style="display:flex;gap:8px;justify-content:flex-end"><button id="exportCancel" class="btn" style="background:#ddd">Batal</button><button id="exportDo" class="btn" style="background:var(--primary)">Export</button></div>`;
+  const {back,win} = createWindow({title:'Export Riwayat', innerHTML:inner, width:420, height:180, onReady:(w,body)=>{
+    const exportCancel = body.querySelector('#exportCancel');
+    const exportDo = body.querySelector('#exportDo');
+    exportCancel.addEventListener('click', ()=> closeWindow(back,win));
+    exportDo.addEventListener('click', ()=> {
+      if(!historyData.length){ showModal('Info','Belum ada riwayat untuk diekspor'); return; }
+      const lines = historyData.slice().reverse().map(h => `[${h.ts}] ${h.action} | link:${h.link||'-'} | file:${h.filename||'-'} | size:${h.size||'-'} | status:${h.status||'-'} | msg:${h.msg||'-'}`);
+      const blob = new Blob([lines.join('\n')], {type:'text/plain'});
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+      a.download = `history_${new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')}.txt`;
+      document.body.appendChild(a); a.click(); a.remove();
+      pushHistory({action:'export',status:'exported'});
+      showInfo('Riwayat diekspor');
+      closeWindow(back,win);
+    });
+  }});
+}
+
+function openCreatorWindowPopup(){
+  const inner = `<div style="height:60vh;display:flex;flex-direction:column"><div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:6px">
+    <button id="openOrig" class="btn" style="background:#ddd">Buka asli</button>
+  </div>
+  <iframe id="creatorFrame" src="${CREATOR_URL}" style="flex:1;border:1px solid #eee;border-radius:6px"></iframe></div>`;
+  const {back,win} = createWindow({title:'Creator', innerHTML:inner, width:840, height:520, onReady:(w,body)=>{
+    const frame = body.querySelector('#creatorFrame');
+    const openOrig = body.querySelector('#openOrig');
+    openOrig.addEventListener('click', ()=> { window.open(CREATOR_URL,'_blank'); });
+  }});
+}
+
+/* ========== TASKBAR MINIMIZED area is handled in minimizeWindow() ========== */
+
+/* ========== MODAL SIMPLE ========= */
+function showModal(title, body){
+  modalTitle.textContent = title; modalBody.textContent = body; simpleModal.style.display='flex';
+  modalOk.style.display='inline-block'; modalCancel.style.display='none';
+  modalOk.textContent = 'OK';
+  modalOk.onclick = ()=> { simpleModal.style.display='none'; };
+}
+modalCancel.onclick = ()=> simpleModal.style.display='none';
+
+/* show confirm with yes/no */
+function showConfirm(title, body, cbYes, cbNo){
+  modalTitle.textContent = title; modalBody.textContent = body; simpleModal.style.display='flex';
+  modalOk.style.display='inline-block'; modalCancel.style.display='inline-block';
+  modalOk.textContent = 'Yes'; modalCancel.textContent='No';
+  modalOk.onclick = ()=> { simpleModal.style.display='none'; if(cbYes) cbYes(); };
+  modalCancel.onclick = ()=> { simpleModal.style.display='none'; if(cbNo) cbNo(); };
+}
+
+/* ========== TASK: Open creator link in popup when top creator link clicked ========== */
+creatorLink.addEventListener('click', (e)=> { e.preventDefault(); openCreatorWindowPopup(); });
+
+/* helper: escape html */
+function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+/* debounce util */
+function debounce(fn,ms){ let t; return function(...a){ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; }
+
+/* ========== INITIAL small check: create a default "main" download window link binding ========== */
+openDownloadBtn.addEventListener('click', ()=> openDownloadWindow());
+
+/* Prevent duplicated function names: all internal functions have unique names (startDownloadProc was renamed to startDownloadProc in previous versions, here we only use startDownloadProc inside openDownloadWindow local closure) */
+
+/* ========== END ========== */
+</script>
+</body>
+</html>
